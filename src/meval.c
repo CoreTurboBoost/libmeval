@@ -597,6 +597,122 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     free(token_stack);
 }
 
+void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uint32_t lex_token_count, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
+    //
+    // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
+    *output_rpn_tokens_count = 0;
+    uint32_t rpn_tokens_capcity = lex_token_count;
+    *output_rpn_tokens = malloc(rpn_tokens_capcity*sizeof(LexToken));
+    uint32_t token_stack_capacity = 4;
+    uint32_t token_stack_count = 0;
+    LexToken* token_stack = malloc(token_stack_capacity*sizeof(LexToken));
+    if (*output_rpn_tokens == NULL || token_stack == NULL) {
+        free(*output_rpn_tokens); // If NULL does nothing.
+        free(token_stack);
+        *return_state = RPNE_FAILED_MEM_ALLOCATION;
+        return;
+    }
+    int32_t open_bracket_count = 0;
+    for (uint32_t input_tokens_index = 0; input_tokens_index < lex_token_count; input_tokens_index++) {
+        const LexToken* current_token = &input_lex_tokens[input_tokens_index];
+        if (current_token->type == LT_NUMBER || current_token->type == LT_CONST || current_token->type == LT_VAR) {
+            printf("Pushing number/const/var into rpn output\n");
+            bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        } else if (current_token->type == LT_OPEN_BRACKET) {
+            printf("Pushing ( into token stack\n");
+            open_bracket_count++;
+            bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        } else if (current_token->type == LT_CLOSE_BRACKET) {
+            printf("Found ) in input, now handling it ...\n");
+            open_bracket_count--;
+            /*
+            if (token_stack_count == 0) {
+                *return_state = RPNE_MISSING_OPEN_BRACKET;
+                free(token_stack);
+                return;
+            }
+            */
+            while (true) {
+                if (token_stack_count == 0) {
+                    // missing an opening bracket (reached end of array, without a open bracket)
+                    printf("How .... ??????\n");
+                    *return_state = RPNE_MISSING_OPEN_BRACKET;
+                    free(token_stack);
+                    return;
+                }
+                if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
+                    token_stack_count--;
+                    printf("Should have brocken here ...\n");
+                    break;
+                }
+                current_token = &token_stack[token_stack_count-1];
+                printf("  token (i=%d, t=%d) being added to token stack\n", current_token->char_index, current_token->type);
+                bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
+                if (!success) {
+                    // failed allocation
+                    free(token_stack);
+                    *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                    return;
+                }
+                token_stack_count--;
+            }
+        } else if (current_token->type == LT_UNARY_FUNCTION || current_token->type == LT_BINARY_FUNCTION) {
+            printf("Pushing function (binary or unary) to token stack\n");
+            uint32_t stack_top_precedence = 0;
+            if (token_stack_count > 0) {
+                stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
+            }
+            uint32_t current_precedence = get_fn_precedence(current_token);
+            bool success = true;
+            while (stack_top_precedence >= current_precedence) {
+                if (token_stack_count == 0) {
+                    break;
+                }
+                if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
+                    printf("  found ( on token stack, ending processing\n");
+                    token_stack_count--;
+                    break;
+                }
+                printf("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
+                stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
+                success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
+                if (!success) {
+                    // failed allocation
+                    free(token_stack);
+                    *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                    return;
+                }
+                token_stack_count--;
+            }
+            success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        }
+    }
+    for (uint32_t i=token_stack_count-1; i+1 != 0; i--) {
+        // pop all the remaining tokens from the tokens stack.
+        printf("Poping remaining token (i=%d, t=%d)\n", token_stack[i].char_index, token_stack[i].type);
+        add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[i]);
+    }
+    free(token_stack);
+}
+
 void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, double* output_value, enum EVAL_ERROR *return_state) {
     *output_value = 0;
     *return_state = EE_NONE;
