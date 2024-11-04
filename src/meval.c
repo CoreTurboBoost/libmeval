@@ -915,6 +915,13 @@ double meval(const char* input_string, struct MEvalError* error) {
     bool error_occured = false;
     const char* error_string = NULL;
     gen_lex_tokens(input_string, strlen(input_string), &tokens, &lex_tokens_count, &error_occured);
+    if (lex_tokens_count == 0) {
+        error->type = MEVAL_LEX_ERROR;
+        error->char_index = 0;
+        strncpy(error->message, "Empty text input", MEVAL_ERROR_STRING_LEN);
+        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        return 0;
+    }
     printf("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
     for (size_t i=0; i < lex_tokens_count; i++) {
         print_token(tokens[i]);
