@@ -313,6 +313,165 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
     }
 }
 
+void gen_lex_tokens_var(const char* input_string, uint32_t input_string_char_count, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+    /*
+     * Input: input_string, input_string_char_count.
+     * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
+     * Note: error_occured does not get set to false. That is the job of the caller.
+     */
+    uint32_t output_lex_tokens_allocated_count = 4;
+    *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
+    for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
+        if (isspace(input_string[char_index])) { continue; }
+        if (input_string[char_index] == '(') {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_OPEN_BRACKET;
+            token.error_type = LE_NONE;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+        } else if (input_string[char_index] == ')') {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_CLOSE_BRACKET;
+            token.error_type = LE_NONE;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+        } else if (isdigit(input_string[char_index]) || input_string[char_index] == '.') {
+            LexToken token = {0};
+            token.type = LT_NUMBER;
+            token.error_type = LE_NONE;
+            token.char_index = char_index;
+            const char* start_char = &input_string[char_index];
+            uint32_t char_count = 1;
+            uint8_t decimal_count = 0;
+            if (input_string[char_index] == '.') {
+                decimal_count++;
+            }
+            for (; char_index < input_string_char_count; char_index++) {
+                if (isdigit(input_string[char_index])) {
+                   char_count++;
+                } else if (input_string[char_index] == '.') {
+                    decimal_count++;
+                    if (decimal_count > 1) {
+                        token.type = LT_ERROR;
+                        token.error_type = LE_MANY_DECIMAL_POINTS;
+                        snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Too many '.' in number", char_index);
+                    }
+                } else {
+                    char_index--;
+                    break;
+                }
+            }
+            if (token.type != LT_ERROR) {
+                char token_buffer[LEXEAME_CHAR_COUNT] = {0};
+                strncpy(token_buffer, start_char, MIN(char_count, LEXEAME_CHAR_COUNT));
+                token.value.number = atof(token_buffer);
+            }
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        } else if (isalpha(input_string[char_index]) || ispunct(input_string[char_index])) {
+            // Add support for variables, (or have a separate lex function that adds support for variabled)
+            printf("Potential identifer...\n");
+            bool is_punct = ispunct(input_string[char_index]);
+            LexToken token = {0};
+            token.type = LT_ERROR;
+            token.error_type = LE_UNRECOGNISED_IDENTIFER;
+            snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unknown function or constant", char_index);
+            token.char_index = char_index;
+            const char* start_char = &input_string[char_index];
+            uint32_t char_count = 1;
+            bool break_early = false;
+            for (char_index++; char_index < input_string_char_count; char_index++) {
+                if (input_string[char_index] == '(') { // Ignore '(' as a valid function character
+                    break_early = true;
+                    break;
+                }
+                if ((isalpha(input_string[char_index]) && !is_punct) || (ispunct(input_string[char_index]) && is_punct)) {
+                    char_count++;
+                } else {
+                    break_early = true;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < unary_fn_count; i++) {
+                if (strncmp(unary_fns[i].name, start_char, char_count) == 0) {
+                    token.type = LT_UNARY_FUNCTION;
+                    token.value.unary_fn = (enum UNARY_FUNCTION_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < binary_fn_count; i++) {
+                if (strncmp(binary_fns[i].name, start_char, char_count) == 0) {
+                    token.type = LT_BINARY_FUNCTION;
+                    token.value.binary_fn = (enum BINARY_FUNCTION_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < constants_count; i++) {
+                if (strncmp(constants[i].name, start_char, char_count) == 0) {
+                    token.type = LT_CONST;
+                    token.value.const_name = (enum CONSTANT_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            if (token.type == LT_VAR && !is_punct) {
+                strncpy(token.value.var_name, start_char, MIN(char_count, LEXEAME_CHAR_COUNT));
+                token.type = LT_VAR;
+                token.error_type = LE_NONE;
+            }
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+            if (break_early) { char_index--; }
+            if (token.type == LT_ERROR) {
+                *error_occured = true;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        } else {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_ERROR;
+            token.error_type = LE_UNRECOGNISED_CHAR;
+            snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unknown char", char_index);
+            *error_occured = true;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                return;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        }
+    }
+}
+
 uint8_t get_fn_precedence(const LexToken* token_ptr) {
     if (token_ptr->type == LT_UNARY_FUNCTION) {
         return unary_fns[token_ptr->value.unary_fn].precedence;
