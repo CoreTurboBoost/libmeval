@@ -1,0 +1,583 @@
+
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h> // snprintf
+#include "meval.h"
+
+enum LEX_TYPE {LT_ERROR, LT_VAR, LT_NUMBER, LT_CONST, LT_UNARY_FUNCTION, LT_BINARY_FUNCTION, LT_OPEN_BRACKET, LT_CLOSE_BRACKET};
+enum LEX_ERROR {LE_NONE, LE_UNRECOGNISED_CHAR, LE_UNRECOGNISED_IDENTIFER, LE_MANY_DECIMAL_POINTS};
+enum RPN_ERROR {RPNE_NONE, RPNE_FAILED_MEM_ALLOCATION, RPNE_MISSING_OPEN_BRACKET, RPNE_MISSING_CLOSING_BRACKET};
+enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_TOO_MANY_FUNCTIONS /*more functions than operators*/, EE_TOO_MANY_OPERANDS};
+#define LEXEAME_CHAR_COUNT 64
+#define MIN(a, b) (a < b ? a : b)
+
+typedef struct {
+    const char* name;
+    uint8_t precedence;
+    double (*fnptr)(double);
+} UnaryFn;
+typedef struct {
+    const char* name;
+    uint8_t precedence;
+    double (*fnptr)(double, double);
+} BinaryFn;
+typedef struct {
+    const char* name;
+    double value;
+} Constant;
+
+// TODO: Add conditional checks to the following functions (if an error occured, set a global error state somewhere to note of the error). This state should be checked every function call by the caller.
+
+// TODO: Combine all these separate attributes to a single struct.
+//  struct UnaryFn(name: str, id: enum/int, precedence: int, fnptr)
+//  struct BinaryFn(name: str, id: enum/int, precedence: int, fnptr)
+//  struct Constant(name: str, id: enum/int, value: double)
+
+// Note: functions or constants cannot contain both both punctuation and characters in it.
+// Note: functions or constants cannot contain digits, although this may change latter.
+// Note: functions or constants cannot be (or state with) '(' or ')', these are reserved.
+double fn_negate(double a) {return -a;}
+double fn_cosec(double a) {return 1/sin(a);}
+double fn_sec(double a) {return 1/cos(a);}
+double fn_cot(double a) {return 1/tan(a);}
+enum UNARY_FUNCTION_NAMES {UFN_NEGATE=0, UFN_SIN, UFN_COS, UFN_TAN, UFN_ASIN, UFN_ACOS, UFN_ATAN, UFN_COSEC, UFN_SEC, UFN_COT, UFN_LOG}; // Used as an index in the 'unary_fns' array.
+static UnaryFn unary_fns[] = {
+    {.name="_", .precedence=4, .fnptr=fn_negate},
+    {.name="sin", .precedence=4, .fnptr=sin},
+    {.name="cos", .precedence=4, .fnptr=cos},
+    {.name="tan", .precedence=4, .fnptr=tan},
+    {.name="asin", .precedence=4, .fnptr=asin},
+    {.name="acos", .precedence=4, .fnptr=acos},
+    {.name="atan", .precedence=4, .fnptr=atan},
+    {.name="cosec", .precedence=4, .fnptr=fn_cosec},
+    {.name="sec", .precedence=4, .fnptr=fn_sec},
+    {.name="cot", .precedence=4, .fnptr=fn_cot},
+    {.name="log", .precedence=4, .fnptr=log}
+};
+static size_t unary_fn_count = sizeof(unary_fns)/sizeof(UnaryFn); // Seems to be accurate enough. Although if issues occur, just update this manually.
+
+enum BINARY_FUNCTION_NAMES {BFN_ADD=0, BFN_SUB, BFN_MUL, BFN_DIV, BFN_POW};
+double fn_add(double a, double b) {return a+b;}
+double fn_sub(double a, double b) {return a-b;}
+double fn_mul(double a, double b) {return a*b;}
+double fn_div(double a, double b) {return a/b;}
+static BinaryFn binary_fns[] = {
+    {.name="+", .precedence=1, .fnptr=fn_add},
+    {.name="-", .precedence=1, .fnptr=fn_sub},
+    {.name="*", .precedence=2, .fnptr=fn_mul},
+    {.name="/", .precedence=2, .fnptr=fn_div},
+    {.name="^", .precedence=3, .fnptr=pow}
+};
+static size_t binary_fn_count = sizeof(binary_fns)/sizeof(BinaryFn); // Seems to be accurate enough. Although if issues occur, just update this manually.
+
+enum CONSTANT_NAMES {CN_PI=0, CN_E};
+static Constant constants[] = {
+    {.name="pi", .value=M_PI},
+    {.name="e", .value=M_E}
+};
+static size_t constants_count = sizeof(constants)/sizeof(Constant); // Seems to be accurate enough. Although if issues occur, just update this manually.
+
+typedef struct {
+    enum LEX_TYPE type;
+    uint32_t char_index;
+    enum LEX_ERROR error_type;
+    union {
+        char error_str[LEXEAME_CHAR_COUNT]; // Not really needed (The char_index and error_type, contains the same information)
+        double number;
+        enum UNARY_FUNCTION_NAMES unary_fn;
+        enum BINARY_FUNCTION_NAMES binary_fn;
+        enum CONSTANT_NAMES const_name;
+        char var_name[LEXEAME_CHAR_COUNT];
+    } value;
+} LexToken;
+
+const char* get_rpn_error_str(enum RPN_ERROR error) {
+    switch (error) {
+        case RPNE_NONE:
+            return "None";
+        case RPNE_FAILED_MEM_ALLOCATION:
+            return "Failed Memory Allocation";
+        case RPNE_MISSING_OPEN_BRACKET:
+            return "Missing Open Bracket";
+        case RPNE_MISSING_CLOSING_BRACKET:
+            return "Missing Closing Bracket";
+        default:
+            return "Unknown RPN_ERROR";
+    };
+}
+
+const char* get_eval_error_str(enum EVAL_ERROR error) {
+    switch (error) {
+        case EE_NONE:
+            return "None";
+        case EE_FAILED_MEM_ALLOCATION:
+            return "Failed Memory Allocation";
+        case EE_TOO_MANY_FUNCTIONS:
+            return "Too Many Functions";
+        case EE_TOO_MANY_OPERANDS:
+            return "Too Many Operands";
+        default:
+            return "Known EVAL_ERROR";
+    };
+}
+
+// debug printing
+void print_token(LexToken token) {
+    printf("LexToken(type=%d, char_index=%u, error_type=%d, value=...). ", token.type, token.char_index, token.error_type);
+    if (token.type == LT_ERROR) {
+        printf("value=(error_str=%s)\n", token.value.error_str);
+    } else if (token.type == LT_NUMBER) {
+        printf("value=(number=%f)\n", token.value.number);
+    }  else if (token.type == LT_UNARY_FUNCTION) {
+        printf("value=(unary_function=%d)\n", token.value.unary_fn);
+    } else if (token.type == LT_BINARY_FUNCTION) {
+        printf("value=(binary_function=%d)\n", token.value.binary_fn);
+    } else if (token.type == LT_CONST) {
+        printf("value=(const_name=%d)\n", token.value.const_name);
+    } else {
+        printf("\n");
+    }
+}
+
+bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, uint32_t* token_array_allocated_element_count, LexToken new_token) {
+    /* Append the token 'new_token' to the end of the dynamic array '*token_array_ptr' */
+    if (*token_array_element_count +1 >= *token_array_allocated_element_count) {
+        uint32_t new_allocated_count = *token_array_allocated_element_count*1.5;
+        LexToken* tmp = reallocarray(*token_array_ptr, new_allocated_count, sizeof(LexToken));
+        if (tmp == NULL) {
+            return false;
+        }
+        *token_array_allocated_element_count = new_allocated_count;
+        *token_array_ptr = tmp;
+    }
+    (*token_array_ptr)[*token_array_element_count] = new_token;
+    (*token_array_element_count)++;
+    return true;
+}
+
+void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+    /*
+     * Input: input_string, input_string_char_count.
+     * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
+     * Note: error_occured does not get set to false. That is the job of the caller.
+     */
+    uint32_t output_lex_tokens_allocated_count = 4;
+    *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
+    for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
+        if (isspace(input_string[char_index])) { continue; }
+        if (input_string[char_index] == '(') {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_OPEN_BRACKET;
+            token.error_type = LE_NONE;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+        } else if (input_string[char_index] == ')') {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_CLOSE_BRACKET;
+            token.error_type = LE_NONE;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+        } else if (isdigit(input_string[char_index]) || input_string[char_index] == '.') {
+            LexToken token = {0};
+            token.type = LT_NUMBER;
+            token.error_type = LE_NONE;
+            token.char_index = char_index;
+            const char* start_char = &input_string[char_index];
+            uint32_t char_count = 1;
+            uint8_t decimal_count = 0;
+            if (input_string[char_index] == '.') {
+                decimal_count++;
+            }
+            for (; char_index < input_string_char_count; char_index++) {
+                if (isdigit(input_string[char_index])) {
+                   char_count++;
+                } else if (input_string[char_index] == '.') {
+                    decimal_count++;
+                    if (decimal_count > 1) {
+                        token.type = LT_ERROR;
+                        token.error_type = LE_MANY_DECIMAL_POINTS;
+                        snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Too many '.' in number", char_index);
+                    }
+                } else {
+                    char_index--;
+                    break;
+                }
+            }
+            if (token.type != LT_ERROR) {
+                char token_buffer[LEXEAME_CHAR_COUNT] = {0};
+                strncpy(token_buffer, start_char, MIN(char_count, LEXEAME_CHAR_COUNT));
+                token.value.number = atof(token_buffer);
+            }
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        } else if (isalpha(input_string[char_index]) || ispunct(input_string[char_index])) {
+            // Add support for variables, (or have a separate lex function that adds support for variabled)
+            printf("Potential identifer...\n");
+            bool is_punct = ispunct(input_string[char_index]);
+            LexToken token = {0};
+            token.type = LT_ERROR;
+            token.error_type = LE_UNRECOGNISED_IDENTIFER;
+            snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unknown function or constant", char_index);
+            token.char_index = char_index;
+            const char* start_char = &input_string[char_index];
+            uint32_t char_count = 1;
+            bool break_early = false;
+            for (char_index++; char_index < input_string_char_count; char_index++) {
+                if (input_string[char_index] == '(') {
+                    break_early = true;
+                    break;
+                }
+                if ((isalpha(input_string[char_index]) && !is_punct) || (ispunct(input_string[char_index]) && is_punct)) {
+                    char_count++;
+                } else {
+                    break_early = true;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < unary_fn_count; i++) {
+                if (strncmp(unary_fns[i].name, start_char, char_count) == 0) {
+                    token.type = LT_UNARY_FUNCTION;
+                    token.value.unary_fn = (enum UNARY_FUNCTION_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < binary_fn_count; i++) {
+                if (strncmp(binary_fns[i].name, start_char, char_count) == 0) {
+                    token.type = LT_BINARY_FUNCTION;
+                    token.value.binary_fn = (enum BINARY_FUNCTION_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            for (uint32_t i=0; i < constants_count; i++) {
+                if (strncmp(constants[i].name, start_char, char_count) == 0) {
+                    token.type = LT_CONST;
+                    token.value.const_name = (enum CONSTANT_NAMES)i;
+                    token.error_type = LE_NONE;
+                    break;
+                }
+            }
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                *error_occured = true;
+                return;
+            }
+            if (break_early) { char_index--; }
+            if (token.type == LT_ERROR) {
+                *error_occured = true;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        } else {
+            LexToken token = {0};
+            token.char_index = char_index;
+            token.type = LT_ERROR;
+            token.error_type = LE_UNRECOGNISED_CHAR;
+            snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unknown char", char_index);
+            *error_occured = true;
+            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
+            if (!success) {
+                free(*output_lex_tokens);
+                *output_lex_tokens = NULL;
+                return;
+            }
+            printf("Added new token: ");
+            print_token(token);
+        }
+    }
+}
+
+uint8_t get_fn_precedence(const LexToken* token_ptr) {
+    if (token_ptr->type == LT_UNARY_FUNCTION) {
+        return unary_fns[token_ptr->value.unary_fn].precedence;
+    } else if (token_ptr->type == LT_BINARY_FUNCTION) {
+        return binary_fns[token_ptr->value.binary_fn].precedence;
+    }
+    return 0;
+}
+
+void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
+    //
+    // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
+    *output_rpn_tokens_count = 0;
+    uint32_t rpn_tokens_capcity = lex_token_count;
+    *output_rpn_tokens = malloc(rpn_tokens_capcity*sizeof(LexToken));
+    uint32_t token_stack_capacity = 4;
+    uint32_t token_stack_count = 0;
+    LexToken* token_stack = malloc(token_stack_capacity*sizeof(LexToken));
+    if (*output_rpn_tokens == NULL || token_stack == NULL) {
+        free(*output_rpn_tokens); // If NULL does nothing.
+        free(token_stack);
+        *return_state = RPNE_FAILED_MEM_ALLOCATION;
+        return;
+    }
+    int32_t open_bracket_count = 0;
+    for (uint32_t input_tokens_index = 0; input_tokens_index < lex_token_count; input_tokens_index++) {
+        const LexToken* current_token = &input_lex_tokens[input_tokens_index];
+        if (current_token->type == LT_NUMBER || current_token->type == LT_CONST) {
+            printf("Pushing number/const into rpn output\n");
+            bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        } else if (current_token->type == LT_OPEN_BRACKET) {
+            printf("Pushing ( into token stack\n");
+            open_bracket_count++;
+            bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        } else if (current_token->type == LT_CLOSE_BRACKET) {
+            printf("Found ) in input, now handling it ...\n");
+            open_bracket_count--;
+            /*
+            if (token_stack_count == 0) {
+                *return_state = RPNE_MISSING_OPEN_BRACKET;
+                free(token_stack);
+                return;
+            }
+            */
+            while (true) {
+                if (token_stack_count == 0) {
+                    // missing an opening bracket (reached end of array, without a open bracket)
+                    printf("How .... ??????\n");
+                    *return_state = RPNE_MISSING_OPEN_BRACKET;
+                    free(token_stack);
+                    return;
+                }
+                if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
+                    token_stack_count--;
+                    printf("Should have brocken here ...\n");
+                    break;
+                }
+                current_token = &token_stack[token_stack_count-1];
+                printf("  token (i=%d, t=%d) being added to token stack\n", current_token->char_index, current_token->type);
+                bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
+                if (!success) {
+                    // failed allocation
+                    free(token_stack);
+                    *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                    return;
+                }
+                token_stack_count--;
+            }
+        } else if (current_token->type == LT_UNARY_FUNCTION || current_token->type == LT_BINARY_FUNCTION) {
+            printf("Pushing function (binary or unary) to token stack\n");
+            uint32_t stack_top_precedence = 0;
+            if (token_stack_count > 0) {
+                stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
+            }
+            uint32_t current_precedence = get_fn_precedence(current_token);
+            bool success = true;
+            while (stack_top_precedence >= current_precedence) {
+                if (token_stack_count == 0) {
+                    break;
+                }
+                if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
+                    printf("  found ( on token stack, ending processing\n");
+                    token_stack_count--;
+                    break;
+                }
+                printf("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
+                stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
+                success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
+                if (!success) {
+                    // failed allocation
+                    free(token_stack);
+                    *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                    return;
+                }
+                token_stack_count--;
+            }
+            success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
+            if (!success) {
+                // failed allocation
+                free(token_stack);
+                *return_state = RPNE_FAILED_MEM_ALLOCATION;
+                return;
+            }
+        }
+    }
+    for (uint32_t i=token_stack_count-1; i+1 != 0; i--) {
+        // pop all the remaining tokens from the tokens stack.
+        printf("Poping remaining token (i=%d, t=%d)\n", token_stack[i].char_index, token_stack[i].type);
+        add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[i]);
+    }
+    free(token_stack);
+}
+
+void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, double* output_value, enum EVAL_ERROR *return_state) {
+    *output_value = 0;
+    *return_state = EE_NONE;
+    uint32_t number_stack_count = 0;
+    uint32_t number_stack_capacity = 8;
+    LexToken* number_stack = malloc(number_stack_capacity*sizeof(LexToken));
+    if (number_stack == NULL) {
+        *return_state = EE_FAILED_MEM_ALLOCATION;
+        return;
+    }
+    bool success = true;
+    for (uint32_t input_tokens_index = 0; input_tokens_index < input_rpn_token_count; input_tokens_index++) {
+        const LexToken* current_token = &input_rpn_tokens[input_tokens_index];
+        if (current_token->type == LT_NUMBER) {
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, *current_token);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+        } else if (current_token->type == LT_CONST) {
+            LexToken new_token = *current_token;
+            new_token.type = LT_NUMBER;
+            new_token.value.number = 0;
+            for (size_t i=0; i < constants_count; i++) {
+                if ((size_t)current_token->value.const_name == i) {
+                    new_token.value.number = constants[i].value;
+                    break;
+                }
+            }
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+        } else if (current_token->type == LT_UNARY_FUNCTION) {
+            if (number_stack_count < 1) {
+                *return_state = EE_TOO_MANY_FUNCTIONS;
+                free(number_stack);
+                return;
+            }
+            LexToken evaluated_value = {0};
+            evaluated_value.type = LT_NUMBER;
+            evaluated_value.char_index = current_token->char_index; // Give the char_index, the functions char_index that it was evaluated from.
+            evaluated_value.error_type = LE_NONE;
+            double value = number_stack[--number_stack_count].value.number; // Assume this token is a number token.
+            evaluated_value.value.number = unary_fns[current_token->value.unary_fn].fnptr(value);
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+            // use the precedence to determine what to do with this
+        } else if (current_token->type == LT_BINARY_FUNCTION) {
+            if (number_stack_count < 2) {
+                *return_state = EE_TOO_MANY_FUNCTIONS;
+                free(number_stack);
+                return;
+            }
+            LexToken evaluated_value = {0};
+            evaluated_value.type = LT_NUMBER;
+            evaluated_value.char_index = current_token->char_index; // Give the char_index, the functions char_index that it was evaluated from.
+            evaluated_value.error_type = LE_NONE;
+            double value_b = number_stack[--number_stack_count].value.number; // Assume token is a valid number, if it is in the number stack.
+            double value_a = number_stack[--number_stack_count].value.number; // Assume token is a valid number, if it is in the number stack.
+            evaluated_value.value.number = binary_fns[current_token->value.binary_fn].fnptr(value_a, value_b);
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+            // use the precedence to determine what to do with this
+        } // Ignore unknown types (these should have been handled by an earlier stage)
+    }
+    if (number_stack_count != 1) {
+        *return_state = EE_TOO_MANY_OPERANDS;
+        free(number_stack);
+        return;
+    }
+    *output_value = number_stack[0].value.number;
+    free(number_stack);
+}
+
+double meval(const char* input_string, struct MEvalError* error) {
+    LexToken* tokens = NULL;
+    uint32_t lex_tokens_count = 0;
+    bool error_occured = false;
+    const char* error_string = NULL;
+    gen_lex_tokens(input_string, strlen(input_string), &tokens, &lex_tokens_count, &error_occured);
+    printf("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
+    for (size_t i=0; i < lex_tokens_count; i++) {
+        print_token(tokens[i]);
+    }
+    if (error_occured) {
+        for (size_t i=0; i < lex_tokens_count; i++) {
+            if (tokens[i].type == LT_ERROR) {
+                error->type = MEVAL_LEX_ERROR;
+                error->char_index = tokens[i].char_index;
+                strncpy(error->message, tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
+                error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+                return 0;
+            }
+        }
+        // Error occured ... But cannot find it?????
+    }
+    enum RPN_ERROR rpn_error = RPNE_NONE;
+    LexToken* rpn_tokens = NULL;
+    uint32_t rpn_tokens_count = 0;
+    gen_reverse_polish_notation(tokens, lex_tokens_count, &rpn_tokens, &rpn_tokens_count, &rpn_error);
+    for (size_t i=0; i < rpn_tokens_count; i++) {
+        printf("RPN Token: ");
+        print_token(rpn_tokens[i]);
+    }
+    if (rpn_error != RPNE_NONE) {
+        printf("RPN Error occured (%d)\n", rpn_error);
+        error->type = MEVAL_PARSE_ERROR;
+        if (rpn_tokens_count != 0) {
+            error->char_index = rpn_tokens[rpn_tokens_count-1].char_index;
+        } else {
+            error->char_index = 0;
+        }
+        error_string = get_rpn_error_str(rpn_error);
+        strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
+        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+    }
+
+    double output = 0;
+    enum EVAL_ERROR eval_error = EE_NONE;
+    eval_rpn_tokens(rpn_tokens, rpn_tokens_count, &output, &eval_error);
+    if (eval_error != EE_NONE) {
+        error->type = MEVAL_PARSE_ERROR;
+        error->char_index = 0; // To be determined.
+        error_string = get_eval_error_str(eval_error);
+        strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
+        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+    }
+    printf("Eval Error: %d\n", eval_error);
+    
+    return output;
+}
