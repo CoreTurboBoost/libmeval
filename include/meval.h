@@ -3,6 +3,7 @@
 
 enum MEVAL_ERROR {MEVAL_NO_ERROR, MEVAL_LEX_ERROR, MEVAL_PARSE_ERROR};
 #define MEVAL_ERROR_STRING_LEN 256
+#define MEVAL_VAR_NAME_MAX_LEN 64
 struct MEvalError {
     enum MEVAL_ERROR type;
     uint32_t char_index;
@@ -11,8 +12,9 @@ struct MEvalError {
 double meval(const char* input_string, struct MEvalError* error);
 
 typedef struct {
-    const char* name;
+    char name[MEVAL_VAR_NAME_MAX_LEN];
     uint32_t len; // CharCount.
+    double value;
 } MEvalVar;
 
 typedef struct {

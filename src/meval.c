@@ -11,7 +11,7 @@
 enum LEX_TYPE {LT_ERROR, LT_VAR, LT_NUMBER, LT_CONST, LT_UNARY_FUNCTION, LT_BINARY_FUNCTION, LT_OPEN_BRACKET, LT_CLOSE_BRACKET};
 enum LEX_ERROR {LE_NONE, LE_UNRECOGNISED_CHAR, LE_UNRECOGNISED_IDENTIFER, LE_MANY_DECIMAL_POINTS};
 enum RPN_ERROR {RPNE_NONE, RPNE_FAILED_MEM_ALLOCATION, RPNE_MISSING_OPEN_BRACKET, RPNE_MISSING_CLOSING_BRACKET};
-enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_TOO_MANY_FUNCTIONS /*more functions than operators*/, EE_TOO_MANY_OPERANDS};
+enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_TOO_MANY_FUNCTIONS /*more functions than operators*/, EE_TOO_MANY_OPERANDS, EE_USE_OF_UNDEFINED_VAR /*function using a undefined variable*/};
 #define LEXEAME_CHAR_COUNT 64
 #define MIN(a, b) (a < b ? a : b)
 
@@ -120,6 +120,8 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
             return "Too Many Functions";
         case EE_TOO_MANY_OPERANDS:
             return "Too Many Operands";
+        case EE_USE_OF_UNDEFINED_VAR:
+            return "Use Of Undefined Variable";
         default:
             return "Known EVAL_ERROR";
     };
@@ -743,6 +745,114 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
                     break;
                 }
             }
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+        } else if (current_token->type == LT_UNARY_FUNCTION) {
+            if (number_stack_count < 1) {
+                *return_state = EE_TOO_MANY_FUNCTIONS;
+                free(number_stack);
+                return;
+            }
+            LexToken evaluated_value = {0};
+            evaluated_value.type = LT_NUMBER;
+            evaluated_value.char_index = current_token->char_index; // Give the char_index, the functions char_index that it was evaluated from.
+            evaluated_value.error_type = LE_NONE;
+            double value = number_stack[--number_stack_count].value.number; // Assume this token is a number token.
+            evaluated_value.value.number = unary_fns[current_token->value.unary_fn].fnptr(value);
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+            // use the precedence to determine what to do with this
+        } else if (current_token->type == LT_BINARY_FUNCTION) {
+            if (number_stack_count < 2) {
+                *return_state = EE_TOO_MANY_FUNCTIONS;
+                free(number_stack);
+                return;
+            }
+            LexToken evaluated_value = {0};
+            evaluated_value.type = LT_NUMBER;
+            evaluated_value.char_index = current_token->char_index; // Give the char_index, the functions char_index that it was evaluated from.
+            evaluated_value.error_type = LE_NONE;
+            double value_b = number_stack[--number_stack_count].value.number; // Assume token is a valid number, if it is in the number stack.
+            double value_a = number_stack[--number_stack_count].value.number; // Assume token is a valid number, if it is in the number stack.
+            evaluated_value.value.number = binary_fns[current_token->value.binary_fn].fnptr(value_a, value_b);
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+            // use the precedence to determine what to do with this
+        } // Ignore unknown types (these should have been handled by an earlier stage)
+    }
+    if (number_stack_count != 1) {
+        *return_state = EE_TOO_MANY_OPERANDS;
+        free(number_stack);
+        return;
+    }
+    *output_value = number_stack[0].value.number;
+    free(number_stack);
+}
+
+void eval_rpn_tokens_var(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, const MEvalVar* variables_array_ptr, const uint32_t variables_array_element_count, double* output_value, enum EVAL_ERROR *return_state) {
+    *output_value = 0;
+    *return_state = EE_NONE;
+    uint32_t number_stack_count = 0;
+    uint32_t number_stack_capacity = 8;
+    LexToken* number_stack = malloc(number_stack_capacity*sizeof(LexToken));
+    if (number_stack == NULL) {
+        *return_state = EE_FAILED_MEM_ALLOCATION;
+        return;
+    }
+    bool success = true;
+    for (uint32_t input_tokens_index = 0; input_tokens_index < input_rpn_token_count; input_tokens_index++) {
+        const LexToken* current_token = &input_rpn_tokens[input_tokens_index];
+        if (current_token->type == LT_NUMBER) {
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, *current_token);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+        } else if (current_token->type == LT_CONST) {
+            LexToken new_token = *current_token;
+            new_token.type = LT_NUMBER;
+            new_token.value.number = 0;
+            for (size_t i=0; i < constants_count; i++) {
+                if ((size_t)current_token->value.const_name == i) {
+                    new_token.value.number = constants[i].value;
+                    break;
+                }
+            }
+            success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
+            if (!success) {
+                *return_state = EE_FAILED_MEM_ALLOCATION;
+                free(number_stack);
+                return;
+            }
+        } else if (current_token->type == LT_VAR) {
+            int32_t var_index = -1;
+            for (size_t i=0; i < variables_array_element_count; i++) {
+                if (strcmp(current_token->value.var_name, variables_array_ptr[i].name) == 0) {
+                    var_index = i;
+                    break;
+                }
+            }
+            if (var_index == -1) {
+                *return_state = EE_USE_OF_UNDEFINED_VAR;
+                free(number_stack);
+                return;
+            }
+            LexToken new_token = *current_token;
+            new_token.type = LT_NUMBER;
+            new_token.value.number = variables_array_ptr[var_index].value;
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
