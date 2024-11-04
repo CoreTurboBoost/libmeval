@@ -925,7 +925,7 @@ double meval(const char* input_string, struct MEvalError* error) {
     if (lex_tokens_count == 0) {
         error->type = MEVAL_LEX_ERROR;
         error->char_index = 0;
-        strncpy(error->message, "Empty text input", MEVAL_ERROR_STRING_LEN);
+        strncpy(error->message, "Empty/Invalid Text Input", MEVAL_ERROR_STRING_LEN);
         error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
