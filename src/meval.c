@@ -248,7 +248,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             uint32_t char_count = 1;
             bool break_early = false;
             for (char_index++; char_index < input_string_char_count; char_index++) {
-                if (input_string[char_index] == '(') {
+                if (input_string[char_index] == '(' || input_string[char_index] == ')') {
                     break_early = true;
                     break;
                 }
@@ -413,7 +413,7 @@ void gen_lex_tokens_var(const char* input_string, uint32_t input_string_char_cou
             uint32_t char_count = 1;
             bool break_early = false;
             for (char_index++; char_index < input_string_char_count; char_index++) {
-                if (input_string[char_index] == '(') { // Ignore '(' as a valid function character
+                if (input_string[char_index] == '(' || input_string[char_index] == ')') {
                     break_early = true;
                     break;
                 }
