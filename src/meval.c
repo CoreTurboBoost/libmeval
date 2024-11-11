@@ -259,29 +259,40 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                     break;
                 }
             }
-            for (uint32_t i=0; i < unary_fn_count; i++) {
-                if (strncmp(unary_fns[i].name, start_char, char_count) == 0) {
-                    token.type = LT_UNARY_FUNCTION;
-                    token.value.unary_fn = (enum UNARY_FUNCTION_NAMES)i;
-                    token.error_type = LE_NONE;
-                    break;
+            bool needs_chopping = true;
+            uint32_t chopped_char_count = char_count+1;
+            while (needs_chopping && chopped_char_count > 1) {
+                chopped_char_count--;
+                for (uint32_t i=0; i < unary_fn_count; i++) {
+                    if (strncmp(unary_fns[i].name, start_char, chopped_char_count) == 0) {
+                        token.type = LT_UNARY_FUNCTION;
+                        token.value.unary_fn = (enum UNARY_FUNCTION_NAMES)i;
+                        token.error_type = LE_NONE;
+                        needs_chopping = false;
+                        break;
+                    }
+                }
+                for (uint32_t i=0; i < binary_fn_count; i++) {
+                    if (strncmp(binary_fns[i].name, start_char, chopped_char_count) == 0) {
+                        token.type = LT_BINARY_FUNCTION;
+                        token.value.binary_fn = (enum BINARY_FUNCTION_NAMES)i;
+                        token.error_type = LE_NONE;
+                        needs_chopping = false;
+                        break;
+                    }
+                }
+                for (uint32_t i=0; i < constants_count; i++) {
+                    if (strncmp(constants[i].name, start_char, chopped_char_count) == 0) {
+                        token.type = LT_CONST;
+                        token.value.const_name = (enum CONSTANT_NAMES)i;
+                        token.error_type = LE_NONE;
+                        needs_chopping = false;
+                        break;
+                    }
                 }
             }
-            for (uint32_t i=0; i < binary_fn_count; i++) {
-                if (strncmp(binary_fns[i].name, start_char, char_count) == 0) {
-                    token.type = LT_BINARY_FUNCTION;
-                    token.value.binary_fn = (enum BINARY_FUNCTION_NAMES)i;
-                    token.error_type = LE_NONE;
-                    break;
-                }
-            }
-            for (uint32_t i=0; i < constants_count; i++) {
-                if (strncmp(constants[i].name, start_char, char_count) == 0) {
-                    token.type = LT_CONST;
-                    token.value.const_name = (enum CONSTANT_NAMES)i;
-                    token.error_type = LE_NONE;
-                    break;
-                }
+            if (!needs_chopping) {
+                char_index -= char_count - chopped_char_count;
             }
             bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
             if (!success) {
