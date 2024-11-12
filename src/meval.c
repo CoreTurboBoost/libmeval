@@ -271,6 +271,8 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             }
             bool needs_chopping = true;
             uint32_t chopped_char_count = char_count+1;
+            // TODO: See previous token, if non-existent or a function, then the current function can only be a unary function, therefore ignore binary function checks.
+            //   This implements binary-unary function overloading. Also removes evalution error EE_TOO_MANY_FUNCTIONS (As a binary function can no longer be placed in a unary function location)
             while (needs_chopping && chopped_char_count > 1) {
                 chopped_char_count--;
                 for (uint32_t i=0; i < unary_fn_count; i++) {
@@ -829,6 +831,8 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
         free(number_stack);
         return;
     }
+    // TODO: Go through every element, and make sure that a binary function does not have another binary function adjacent (directly next to it).
+    //    Unary functions can be ignored, because unary functions can have parameters from the left or the right, or may even have another unary function next to it.
     *output_value = number_stack[0].value.number;
     free(number_stack);
 }
