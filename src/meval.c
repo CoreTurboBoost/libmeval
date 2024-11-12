@@ -191,14 +191,14 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
     bool token_handle_error_occured = false;
     for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
         if (isspace(input_string[char_index])) { continue; }
-        if (match_and_add_char(input_string[char_index], '(', lt_open_bracket, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+        if (match_and_add_char(input_string[char_index], '(', LT_OPEN_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
         if (token_handle_error_occured) {
             free(*output_lex_tokens);
             *output_lex_tokens = NULL;
             *error_occured = true;
             return;
         }
-        } else if (match_and_add_char(input_string[char_index], ')', lt_close_bracket, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+        } else if (match_and_add_char(input_string[char_index], ')', LT_CLOSE_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
             if (token_handle_error_occured) {
                 free(*output_lex_tokens);
                 *output_lex_tokens = NULL;
@@ -346,16 +346,17 @@ void gen_lex_tokens_var(const char* input_string, uint32_t input_string_char_cou
      */
     uint32_t output_lex_tokens_allocated_count = 4;
     *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
+    bool token_handle_error_occured = false;
     for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
         if (isspace(input_string[char_index])) { continue; }
-        if (match_and_add_char(input_string[char_index], '(', lt_open_bracket, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+        if (match_and_add_char(input_string[char_index], '(', LT_OPEN_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
         if (token_handle_error_occured) {
             free(*output_lex_tokens);
             *output_lex_tokens = NULL;
             *error_occured = true;
             return;
         }
-        } else if (match_and_add_char(input_string[char_index], ')', lt_close_bracket, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+        } else if (match_and_add_char(input_string[char_index], ')', LT_CLOSE_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
             if (token_handle_error_occured) {
                 free(*output_lex_tokens);
                 *output_lex_tokens = NULL;
