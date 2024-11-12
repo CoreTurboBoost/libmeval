@@ -161,6 +161,25 @@ bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, 
     return true;
 }
 
+bool match_and_add_char(const char input, const char expect_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
+    /*
+     * Returns true on success, else false.
+     *  'token_allocation_error' should be initalized to false, before execution.
+     */
+    if (input == expected_char) {
+        LexToken token = {0};
+        token.char_index = char_index;
+        token.type = token_type;
+        token.error_type = LE_NONE;
+        bool success = add_token(token_array, tokens_count, tokens_capacity, token);
+        if (!success) {
+            *token_allocation_error = true;
+        }
+        return true;
+    }
+    return false;
+}
+
 void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
     /*
      * Input: input_string, input_string_char_count.
