@@ -95,6 +95,12 @@ typedef struct {
     } value;
 } LexToken;
 
+typedef struct {
+    LexToken* tokens_ptr;
+    uint32_t tokens_count;
+    uint32_t array_capacity;
+} LexTokenArray;
+
 const char* get_rpn_error_str(enum RPN_ERROR error) {
     switch (error) {
         case RPNE_NONE:
