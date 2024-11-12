@@ -188,27 +188,18 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
      */
     uint32_t output_lex_tokens_allocated_count = 4;
     *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
+    bool token_handle_error_occured = false;
     for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
         if (isspace(input_string[char_index])) { continue; }
-        if (input_string[char_index] == '(') {
-            LexToken token = {0};
-            token.char_index = char_index;
-            token.type = LT_OPEN_BRACKET;
-            token.error_type = LE_NONE;
-            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
-            if (!success) {
-                free(*output_lex_tokens);
-                *output_lex_tokens = NULL;
-                *error_occured = true;
-                return;
-            }
-        } else if (input_string[char_index] == ')') {
-            LexToken token = {0};
-            token.char_index = char_index;
-            token.type = LT_CLOSE_BRACKET;
-            token.error_type = LE_NONE;
-            bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
-            if (!success) {
+        if (match_and_add_char(input_string[char_index], '(', LT_OPEN_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+        if (token_handle_error_occured) {
+            free(*output_lex_tokens);
+            *output_lex_tokens = NULL;
+            *error_occured = true;
+            return;
+        }
+        } else if (match_and_add_char(input_string[char_index], ')', LT_CLOSE_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
+            if (token_handle_error_occured) {
                 free(*output_lex_tokens);
                 *output_lex_tokens = NULL;
                 *error_occured = true;
