@@ -161,7 +161,7 @@ bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, 
     return true;
 }
 
-bool match_and_add_char(const char input, const char expect_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
+bool match_and_add_char(const char input, const char expected_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
     /*
      * Returns true on success, else false.
      *  'token_allocation_error' should be initalized to false, before execution.
