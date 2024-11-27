@@ -641,6 +641,10 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     for (uint32_t i=token_stack_count-1; i+1 != 0; i--) {
         // pop all the remaining tokens from the tokens stack.
         printf("Poping remaining token (i=%d, t=%d)\n", token_stack[i].char_index, token_stack[i].type);
+        if (token_stack[i].type == LT_OPEN_BRACKET) {
+            printf(" Ignoring open bracket at stack index %d\n", i);
+            continue; // Assume the closing bracket was ment to be at the end.
+        }
         add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[i]);
     }
     free(token_stack);
