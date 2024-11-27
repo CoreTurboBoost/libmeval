@@ -1010,6 +1010,8 @@ double meval(const char* input_string, struct MEvalError* error) {
         error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
     }
     printf("Eval Error: %d\n", eval_error);
+    free(rpn_tokens);
+    free(tokens);
     
     return output;
 }
