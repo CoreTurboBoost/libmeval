@@ -11,7 +11,7 @@
 enum LEX_TYPE {LT_ERROR, LT_VAR, LT_NUMBER, LT_CONST, LT_UNARY_FUNCTION, LT_BINARY_FUNCTION, LT_OPEN_BRACKET, LT_CLOSE_BRACKET};
 enum LEX_ERROR {LE_NONE, LE_UNRECOGNISED_CHAR, LE_UNRECOGNISED_IDENTIFER, LE_MANY_DECIMAL_POINTS};
 enum RPN_ERROR {RPNE_NONE, RPNE_FAILED_MEM_ALLOCATION, RPNE_MISSING_OPEN_BRACKET, RPNE_MISSING_CLOSING_BRACKET};
-enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_TOO_MANY_FUNCTIONS /*more functions than operators*/, EE_TOO_MANY_OPERANDS, EE_USE_OF_UNDEFINED_VAR /*function using a undefined variable*/};
+enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_NOT_ENOUGH_OPERANDS /*more functions than operators*/, EE_TOO_MANY_OPERANDS, EE_USE_OF_UNDEFINED_VAR /*function using a undefined variable*/};
 #define LEXEAME_CHAR_COUNT 64
 #define MIN(a, b) (a < b ? a : b)
 
@@ -122,8 +122,8 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
             return "None";
         case EE_FAILED_MEM_ALLOCATION:
             return "Failed Memory Allocation";
-        case EE_TOO_MANY_FUNCTIONS:
-            return "Too Many Functions";
+        case EE_NOT_ENOUGH_OPERANDS:
+            return "Not Enough Operands";
         case EE_TOO_MANY_OPERANDS:
             return "Too Many Operands";
         case EE_USE_OF_UNDEFINED_VAR:
@@ -278,7 +278,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             bool needs_chopping = true;
             uint32_t chopped_char_count = char_count+1;
             // TODO: See previous token, if non-existent or a function, then the current function can only be a unary function, therefore ignore binary function checks.
-            //   This implements binary-unary function overloading. Also removes evalution error EE_TOO_MANY_FUNCTIONS (As a binary function can no longer be placed in a unary function location)
+            //   This implements binary-unary function overloading. Also removes evalution error EE_NOT_ENOUGH_OPERANDS (As a binary function can no longer be placed in a unary function location)
             while (needs_chopping && chopped_char_count > 1) {
                 chopped_char_count--;
                 for (uint32_t i=0; i < unary_fn_count; i++) {
@@ -772,7 +772,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             }
         } else if (current_token->type == LT_UNARY_FUNCTION) {
             if (number_stack_count < 1) {
-                *return_state = EE_TOO_MANY_FUNCTIONS;
+                *return_state = EE_NOT_ENOUGH_OPERANDS;
                 free(number_stack);
                 return;
             }
@@ -791,7 +791,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             // use the precedence to determine what to do with this
         } else if (current_token->type == LT_BINARY_FUNCTION) {
             if (number_stack_count < 2) {
-                *return_state = EE_TOO_MANY_FUNCTIONS;
+                *return_state = EE_NOT_ENOUGH_OPERANDS;
                 free(number_stack);
                 return;
             }
@@ -882,7 +882,7 @@ void eval_rpn_tokens_var(const LexToken* input_rpn_tokens, const uint32_t input_
             }
         } else if (current_token->type == LT_UNARY_FUNCTION) {
             if (number_stack_count < 1) {
-                *return_state = EE_TOO_MANY_FUNCTIONS;
+                *return_state = EE_NOT_ENOUGH_OPERANDS;
                 free(number_stack);
                 return;
             }
@@ -901,7 +901,7 @@ void eval_rpn_tokens_var(const LexToken* input_rpn_tokens, const uint32_t input_
             // use the precedence to determine what to do with this
         } else if (current_token->type == LT_BINARY_FUNCTION) {
             if (number_stack_count < 2) {
-                *return_state = EE_TOO_MANY_FUNCTIONS;
+                *return_state = EE_NOT_ENOUGH_OPERANDS;
                 free(number_stack);
                 return;
             }
