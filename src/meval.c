@@ -585,7 +585,9 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 token_stack_count--;
             }
         } else if (current_token->type == LT_UNARY_FUNCTION || current_token->type == LT_BINARY_FUNCTION) {
-            printf("Pushing function (binary or unary) to token stack\n");
+            printf("Pushing function (type=%d) to token stack, ", current_token->type);
+            print_token_value(*current_token);
+            printf("\n");
             uint32_t stack_top_precedence = 0;
             if (token_stack_count > 0) {
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
