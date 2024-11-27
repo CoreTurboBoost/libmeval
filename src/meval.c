@@ -649,7 +649,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     }
     free(token_stack);
 }
-
+/*
 void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uint32_t lex_token_count, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
     //
     // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
@@ -688,13 +688,11 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
         } else if (current_token->type == LT_CLOSE_BRACKET) {
             printf("Found ) in input, now handling it ...\n");
             open_bracket_count--;
-            /*
-            if (token_stack_count == 0) {
-                *return_state = RPNE_MISSING_OPEN_BRACKET;
-                free(token_stack);
-                return;
-            }
-            */
+            //if (token_stack_count == 0) {
+            //    *return_state = RPNE_MISSING_OPEN_BRACKET;
+            //    free(token_stack);
+            //    return;
+            //}
             while (true) {
                 if (token_stack_count == 0) {
                     // missing an opening bracket (reached end of array, without a open bracket)
@@ -760,6 +758,7 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
     }
     free(token_stack);
 }
+*/
 
 void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, double* output_value, enum EVAL_ERROR *return_state) {
     *output_value = 0;
