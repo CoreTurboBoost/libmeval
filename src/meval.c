@@ -568,7 +568,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 }
                 if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
                     token_stack_count--;
-                    printf("Should have brocken here ...\n");
                     break;
                 }
                 current_token = &token_stack[token_stack_count-1];
