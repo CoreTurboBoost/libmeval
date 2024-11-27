@@ -134,21 +134,25 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
 }
 
 // debug printing
+void print_token_value(LexToken token) {
+    if (token.type == LT_ERROR) {
+        printf("value=(error_str=%s)", token.value.error_str);
+    } else if (token.type == LT_NUMBER) {
+        printf("value=(number=%f)", token.value.number);
+    }  else if (token.type == LT_UNARY_FUNCTION) {
+        printf("value=(unary_function=%d)", token.value.unary_fn);
+    } else if (token.type == LT_BINARY_FUNCTION) {
+        printf("value=(binary_function=%d)", token.value.binary_fn);
+    } else if (token.type == LT_CONST) {
+        printf("value=(const_name=%d)", token.value.const_name);
+    } else {
+        printf("value=(UNKNOWN)");
+    }
+}
 void print_token(LexToken token) {
     printf("LexToken(type=%d, char_index=%u, error_type=%d, value=...). ", token.type, token.char_index, token.error_type);
-    if (token.type == LT_ERROR) {
-        printf("value=(error_str=%s)\n", token.value.error_str);
-    } else if (token.type == LT_NUMBER) {
-        printf("value=(number=%f)\n", token.value.number);
-    }  else if (token.type == LT_UNARY_FUNCTION) {
-        printf("value=(unary_function=%d)\n", token.value.unary_fn);
-    } else if (token.type == LT_BINARY_FUNCTION) {
-        printf("value=(binary_function=%d)\n", token.value.binary_fn);
-    } else if (token.type == LT_CONST) {
-        printf("value=(const_name=%d)\n", token.value.const_name);
-    } else {
-        printf("\n");
-    }
+    print_token_value(token);
+    printf("\n");
 }
 
 bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, uint32_t* token_array_allocated_element_count, LexToken new_token) {
