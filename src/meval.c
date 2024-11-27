@@ -536,7 +536,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             printf("Pushing number/const into rpn output\n");
             bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
@@ -546,7 +545,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
@@ -578,7 +576,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 printf("  token (i=%d, t=%d) being added to token stack\n", current_token->char_index, current_token->type);
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
-                    // failed allocation
                     free(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
@@ -606,7 +603,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
                 if (!success) {
-                    // failed allocation
                     free(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
@@ -615,7 +611,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
             success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
@@ -652,7 +647,6 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
             printf("Pushing number/const/var into rpn output\n");
             bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
@@ -662,7 +656,6 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
@@ -694,7 +687,6 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
                 printf("  token (i=%d, t=%d) being added to token stack\n", current_token->char_index, current_token->type);
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
-                    // failed allocation
                     free(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
@@ -722,7 +714,6 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
                 if (!success) {
-                    // failed allocation
                     free(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
@@ -731,7 +722,6 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
             }
             success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                // failed allocation
                 free(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
