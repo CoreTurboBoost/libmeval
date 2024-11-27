@@ -997,6 +997,7 @@ double meval(const char* input_string, struct MEvalError* error) {
         error_string = get_rpn_error_str(rpn_error);
         strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
         error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        return 0;
     }
 
     double output = 0;
@@ -1008,6 +1009,7 @@ double meval(const char* input_string, struct MEvalError* error) {
         error_string = get_eval_error_str(eval_error);
         strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
         error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        return 0;
     }
     printf("Eval Error: %d\n", eval_error);
     free(rpn_tokens);
