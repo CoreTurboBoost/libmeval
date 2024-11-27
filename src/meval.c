@@ -559,7 +559,8 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 return;
             }
         } else if (current_token->type == LT_OPEN_BRACKET) {
-            printf("Pushing ( into token stack\n");
+            printf("Pushing ( i=%d into token stack\n", current_token->char_index);
+            printf("  open_bracket_count: %d\n", open_bracket_count);
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
@@ -569,6 +570,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
         } else if (current_token->type == LT_CLOSE_BRACKET) {
             printf("Found ) in input, now handling it ...\n");
+            printf("  Current open_bracket_count: %d\n", open_bracket_count);
             open_bracket_count--;
             /*
             if (token_stack_count == 0) {
@@ -580,6 +582,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             while (true) {
                 if (token_stack_count == 0) {
                     // missing an opening bracket (reached end of array, without a open bracket)
+                    printf("Mising open bracket, count: %d\n", open_bracket_count);
                     *return_state = RPNE_MISSING_OPEN_BRACKET;
                     free(token_stack);
                     return;
@@ -589,8 +592,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                     printf("  Found ( i=%d in closing bracket search, ending proccessing\n", current_token->char_index);
                     break;
                 }
-                current_token = &token_stack[token_stack_count-1];
-                printf("  token (i=%d, t=%d) being added to token stack\n", current_token->char_index, current_token->type);
+                printf("  token (i=%d, t=%d) being added to output token stack\n", current_token->char_index, current_token->type);
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
                     free(token_stack);
@@ -609,12 +611,12 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
             uint32_t current_precedence = get_fn_precedence(current_token);
             bool success = true;
-            while (stack_top_precedence >= current_precedence) {
+            while (stack_top_precedence >= current_precedence) { // Convert to a (eval from right first) like an array language, by changing the condition from '>=' to '>'.
                 if (token_stack_count == 0) {
                     break;
                 }
                 if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
-                    printf("  found ( on token stack, ending processing\n");
+                    printf("  found ( on token stack (index=%d), ending function search processing\n", token_stack_count-1);
                     token_stack_count--;
                     break;
                 }
@@ -671,7 +673,7 @@ void gen_reverse_polish_notation_var(const LexToken* input_lex_tokens, const uin
                 return;
             }
         } else if (current_token->type == LT_OPEN_BRACKET) {
-            printf("Pushing ( into token stack\n");
+            printf("Pushing ( into token stack, count: %d\n", open_bracket_count);
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
