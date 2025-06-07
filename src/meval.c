@@ -771,7 +771,7 @@ double meval_var(const char* input_string, struct MEvalError* error) {
     enum EVAL_ERROR eval_error = EE_NONE;
     MEvalVar* variables_array = NULL;
     uint32_t variables_array_element_count = 0;
-    eval_rpn_tokens_var(rpn_tokens, rpn_tokens_count, variables_array, variables_array_element_count, &output, &eval_error);
+    eval_rpn_tokens(rpn_tokens, rpn_tokens_count, true, variables_array, variables_array_element_count, &output, &eval_error);
     if (eval_error != EE_NONE) {
         error->type = MEVAL_PARSE_ERROR;
         error->char_index = 0; // To be determined.
