@@ -98,7 +98,7 @@ static size_t constants_count = sizeof(constants)/sizeof(Constant); // Seems to 
 typedef struct {
     enum LEX_TYPE type;
     uint32_t char_index;
-    /* Add a lexeame_len therefore would allow for functions to print out the specific text that is has an error, especially as the tokens can now the split, due to partial function name calling support */
+    /* Potential improvement TODO. Add a lexeame_len therefore would allow for functions to print out the specific text that is has an error, especially as the tokens can now the split, due to partial function name calling support */
     enum LEX_ERROR error_type;
     union {
         char error_str[LEXEAME_CHAR_COUNT]; // Not really needed (The char_index and error_type, contains the same information)
