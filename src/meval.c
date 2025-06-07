@@ -153,6 +153,8 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
 void print_token_value(LexToken token) {
     if (token.type == LT_ERROR) {
         printf("value=(error_str=%s)", token.value.error_str);
+    } else if (token.type == LT_VAR) {
+        printf("value=(var_name=%s)", token.value.var_name);
     } else if (token.type == LT_NUMBER) {
         printf("value=(number=%f)", token.value.number);
     }  else if (token.type == LT_UNARY_FUNCTION) {
