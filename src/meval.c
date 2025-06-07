@@ -14,6 +14,7 @@ enum RPN_ERROR {RPNE_NONE, RPNE_FAILED_MEM_ALLOCATION, RPNE_MISSING_OPEN_BRACKET
 enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_NOT_ENOUGH_OPERANDS /*more functions than operators*/, EE_TOO_MANY_OPERANDS, EE_USE_OF_UNDEFINED_VAR /*function using a undefined variable*/};
 #define LEXEAME_CHAR_COUNT 64
 #define MIN(a, b) (a < b ? a : b)
+#define MAX(a, b) (a > b ? a : b)
 
 typedef struct {
     const char* name;
