@@ -609,13 +609,15 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
                 return;
             }
             // use the precedence to determine what to do with this
-        } // Ignore unknown types (these should have been handled by an earlier stage)
+        } // Ignore unknown types (these should have been handled by an earlier stage). I guess this now includes variables.
     }
     if (number_stack_count != 1) {
         *return_state = EE_TOO_MANY_OPERANDS;
         free(number_stack);
         return;
     }
+    // TODO: Go through every element, and make sure that a binary function does not have another binary function adjacent (directly next to it).
+    //    Unary functions can be ignored, because unary functions can have parameters from the left or the right, or may even have another unary function next to it.
     *output_value = number_stack[0].value.number;
     free(number_stack);
 }
