@@ -205,7 +205,7 @@ bool match_and_add_char(const char input, const char expected_char, enum LEX_TYP
     return false;
 }
 
-void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
     /*
      * Input: input_string, input_string_char_count.
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
@@ -345,6 +345,11 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                     }
                 }
             }
+            if (found_count == 0 && allow_variables) {
+                token.type = LT_VAR;
+                token.error_type = LE_NONE;
+                snprintf(token.value.var_name, MIN(MEVAL_VAR_NAME_MAX_LEN, char_count), "%s", start_char);
+            }
             if (found_count != 1) { // found_count == 0, iden not found. found_count > 1, iden is ambiguous
                 token.type = LT_ERROR;
                 token.error_type = LE_UNRECOGNISED_IDENTIFER;
@@ -394,7 +399,7 @@ uint8_t get_fn_precedence(const LexToken* token_ptr) {
     return 0;
 }
 
-void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
+void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, bool allow_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
     //
     // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
     *output_rpn_tokens_count = 0;
@@ -412,8 +417,8 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     int32_t open_bracket_count = 0;
     for (uint32_t input_tokens_index = 0; input_tokens_index < lex_token_count; input_tokens_index++) {
         const LexToken* current_token = &input_lex_tokens[input_tokens_index];
-        if (current_token->type == LT_NUMBER || current_token->type == LT_CONST) {
-            printf("Pushing number/const into rpn output\n");
+        if (current_token->type == LT_NUMBER || current_token->type == LT_CONST || (current_token->type == LT_VAR && allow_variables)) {
+            printf("Pushing number/const(/var if %d==true) into rpn output\n", allow_variables);
             bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
             if (!success) {
                 free(token_stack);
@@ -512,7 +517,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     free(token_stack);
 }
 
-void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, double* output_value, enum EVAL_ERROR *return_state) {
+void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, bool allow_variables, const MEvalVar* variables_array_ptr, const uint32_t variables_array_element_count, double* output_value, enum EVAL_ERROR *return_state) {
     *output_value = 0;
     *return_state = EE_NONE;
     uint32_t number_stack_count = 0;
