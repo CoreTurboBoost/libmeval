@@ -559,6 +559,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             }
         } else if (current_token->type == LT_VAR && allow_variables) {
             int32_t var_index = -1;
+            printf("db: checking against %d variables\n", variables_array_element_count);
             for (size_t i=0; i < variables_array_element_count; i++) {
                 if (strcmp(current_token->value.var_name, variables_array_ptr[i].name) == 0) {
                     var_index = i;
@@ -566,6 +567,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
                 }
             }
             if (var_index == -1) {
+                printf("db: Could not find variable with name '%s', but used in expression\n", current_token->value.var_name);
                 *return_state = EE_USE_OF_UNDEFINED_VAR;
                 free(number_stack);
                 return;
