@@ -283,6 +283,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unknown function or constant", char_index);
             token.char_index = char_index;
             const char* start_char = &input_string[char_index];
+            size_t start_char_index = char_index;
             uint32_t char_count = 1;
             bool break_early = false;
             for (char_index++; char_index < input_string_char_count; char_index++) {
