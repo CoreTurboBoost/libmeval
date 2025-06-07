@@ -630,7 +630,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
     free(number_stack);
 }
 
-bool append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) {
+bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) {
     if (variables_array->elements_count >= variables_array->capacity_elements) {
         uint32_t new_capacity = variables_array->capacity_elements * 1.5;
         MEvalVar* tmp = reallocarray(variables_array->arr_ptr, new_capacity, sizeof(MEvalVar));

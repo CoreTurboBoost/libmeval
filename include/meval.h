@@ -26,7 +26,7 @@ typedef struct {
 double meval(const char* input_string, struct MEvalError* error);
 double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error);
 
-bool append_variable(MEvalVarArr *variables_array, MEvalVar new_variable);
-void free_variable_arr(MEvalVarArr *variables_array);
+bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable);
+void meval_free_variable_arr(MEvalVarArr *variables_array);
 
 struct MEvalTokens; // A array of processed tokens (in their RPN form, allows for quick evaluation)
