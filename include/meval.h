@@ -3,7 +3,7 @@
 
 enum MEVAL_ERROR {MEVAL_NO_ERROR, MEVAL_LEX_ERROR, MEVAL_PARSE_ERROR};
 #define MEVAL_ERROR_STRING_LEN 256
-#define MEVAL_VAR_NAME_MAX_LEN 64
+#define MEVAL_VAR_NAME_MAX_LEN 32
 struct MEvalError {
     enum MEVAL_ERROR type;
     uint32_t char_index;
