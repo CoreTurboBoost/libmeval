@@ -295,6 +295,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             }
             bool needs_chopping = true;
             uint32_t chopped_char_count = char_count+1;
+            uint32_t found_count = 0;
             // TODO: See previous token, if non-existent or a function, then the current function can only be a unary function, therefore ignore binary function checks.
             //   This implements binary-unary function overloading. Also removes evalution error EE_NOT_ENOUGH_OPERANDS (As a binary function can no longer be placed in a unary function location)
             while (needs_chopping && chopped_char_count > 1) {
@@ -305,7 +306,12 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.value.unary_fn = (enum UNARY_FUNCTION_NAMES)i;
                         token.error_type = LE_NONE;
                         needs_chopping = false;
-                        break;
+                        //break;
+                        if (strlen(unary_fns[i].name) == chopped_char_count) {
+                            found_count = 1;
+                            break;
+                        }
+                        found_count++;
                     }
                 }
                 for (uint32_t i=0; i < binary_fn_count; i++) {
@@ -314,7 +320,12 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.value.binary_fn = (enum BINARY_FUNCTION_NAMES)i;
                         token.error_type = LE_NONE;
                         needs_chopping = false;
-                        break;
+                        //break;
+                        if (strlen(binary_fns[i].name) == chopped_char_count) {
+                            found_count = 1;
+                            break;
+                        }
+                        found_count++;
                     }
                 }
                 for (uint32_t i=0; i < constants_count; i++) {
@@ -323,9 +334,19 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.value.const_name = (enum CONSTANT_NAMES)i;
                         token.error_type = LE_NONE;
                         needs_chopping = false;
-                        break;
+                        //break;
+                        if (strlen(constants[i].name) == chopped_char_count) {
+                            found_count = 1;
+                            break;
+                        }
+                        found_count++;
                     }
                 }
+            }
+            if (found_count != 1) { // found_count == 0, iden not found. found_count > 1, iden is ambiguous
+                token.type = LT_ERROR;
+                token.error_type = LE_UNRECOGNISED_IDENTIFER;
+                snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unrecognised or ambiguous identifier", char_index);
             }
             if (!needs_chopping) {
                 char_index -= char_count - chopped_char_count;
