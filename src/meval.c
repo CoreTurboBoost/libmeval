@@ -562,6 +562,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             int32_t var_index = -1;
             printf("db: checking against %d variables\n", variables_array_element_count);
             for (size_t i=0; i < variables_array_element_count; i++) {
+                printf("db:  Checking variable '%s'\n", variables_array_ptr[i].name);
                 if (strcmp(current_token->value.var_name, variables_array_ptr[i].name) == 0) {
                     var_index = i;
                     break;
