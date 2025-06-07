@@ -13,7 +13,7 @@ double meval(const char* input_string, struct MEvalError* error);
 
 typedef struct {
     char name[MEVAL_VAR_NAME_MAX_LEN];
-    uint32_t len; // CharCount.
+    uint32_t name_char_count; // CharCount.
     double value;
 } MEvalVar;
 
