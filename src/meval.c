@@ -627,24 +627,45 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
     free(number_stack);
 }
 
-double meval(const char* input_string, struct MEvalError* error) {
+bool append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) {
+    if (variables_array->elements_count >= variables_array->capacity_elements) {
+        uint32_t new_capacity = variables_array->capacity_elements * 1.5;
+        MEvalVar* tmp = reallocarray(variables_array->arr_ptr, new_capacity, sizeof(MEvalVar));
+        if (tmp == NULL) {
+            return false;
+        }
+        variables_array->arr_ptr = tmp;
+        variables_array->capacity_elements = new_capacity;
+    }
+    variables_array->arr_ptr[variables_array->elements_count] = new_variable;
+    variables_array->elements_count++;
+    return true;
+}
+
+void free_variable_arr(MEvalVarArr *variables_array) {
+    free(variables_array->arr_ptr);
+    variables_array->elements_count = 0;
+    variables_array->capacity_elements = 0;
+}
+
+double meval_internal(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
     if (input_string == NULL) {
-        error->type = MEVAL_LEX_ERROR;
-        error->char_index = 0;
-        strncpy(error->message, "No Input Given", MEVAL_ERROR_STRING_LEN);
-        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        output_error->type = MEVAL_LEX_ERROR;
+        output_error->char_index = 0;
+        strncpy(output_error->message, "No Input Given", MEVAL_ERROR_STRING_LEN);
+        output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
     LexToken* tokens = NULL;
     uint32_t lex_tokens_count = 0;
     bool error_occured = false;
     const char* error_string = NULL;
-    gen_lex_tokens(input_string, strlen(input_string), false, &tokens, &lex_tokens_count, &error_occured);
+    gen_lex_tokens(input_string, strlen(input_string), support_variables, &tokens, &lex_tokens_count, &error_occured);
     if (lex_tokens_count == 0) {
-        error->type = MEVAL_LEX_ERROR;
-        error->char_index = 0;
-        strncpy(error->message, "Empty/Invalid Text Input", MEVAL_ERROR_STRING_LEN);
-        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        output_error->type = MEVAL_LEX_ERROR;
+        output_error->char_index = 0;
+        strncpy(output_error->message, "Empty/Invalid Text Input", MEVAL_ERROR_STRING_LEN);
+        output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
     printf("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
@@ -654,10 +675,10 @@ double meval(const char* input_string, struct MEvalError* error) {
     if (error_occured) {
         for (size_t i=0; i < lex_tokens_count; i++) {
             if (tokens[i].type == LT_ERROR) {
-                error->type = MEVAL_LEX_ERROR;
-                error->char_index = tokens[i].char_index;
-                strncpy(error->message, tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
-                error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+                output_error->type = MEVAL_LEX_ERROR;
+                output_error->char_index = tokens[i].char_index;
+                strncpy(output_error->message, tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
+                output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
                 return 0;
             }
         }
@@ -666,48 +687,53 @@ double meval(const char* input_string, struct MEvalError* error) {
     enum RPN_ERROR rpn_error = RPNE_NONE;
     LexToken* rpn_tokens = NULL;
     uint32_t rpn_tokens_count = 0;
-    gen_reverse_polish_notation(tokens, lex_tokens_count, false, &rpn_tokens, &rpn_tokens_count, &rpn_error);
+    gen_reverse_polish_notation(tokens, lex_tokens_count, support_variables, &rpn_tokens, &rpn_tokens_count, &rpn_error);
     for (size_t i=0; i < rpn_tokens_count; i++) {
         printf("RPN Token: ");
         print_token(rpn_tokens[i]);
     }
     if (rpn_error != RPNE_NONE) {
         printf("RPN Error occured (%d)\n", rpn_error);
-        error->type = MEVAL_PARSE_ERROR;
+        output_error->type = MEVAL_PARSE_ERROR;
         if (rpn_tokens_count != 0) {
-            error->char_index = rpn_tokens[rpn_tokens_count-1].char_index;
+            output_error->char_index = rpn_tokens[rpn_tokens_count-1].char_index;
         } else {
-            error->char_index = 0;
+            output_error->char_index = 0;
         }
         error_string = get_rpn_error_str(rpn_error);
-        strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
-        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
+        output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
 
     double output = 0;
     enum EVAL_ERROR eval_error = EE_NONE;
-    eval_rpn_tokens(rpn_tokens, rpn_tokens_count, false, NULL, 0, &output, &eval_error);
+    eval_rpn_tokens(rpn_tokens, rpn_tokens_count, support_variables, variables.arr_ptr, variables.elements_count, &output, &eval_error);
     if (eval_error != EE_NONE) {
-        error->type = MEVAL_PARSE_ERROR;
-        error->char_index = 0; // To be determined.
+        output_error->type = MEVAL_PARSE_ERROR;
+        output_error->char_index = 0; // To be determined.
         error_string = get_eval_error_str(eval_error);
-        strncpy(error->message, error_string, MEVAL_ERROR_STRING_LEN);
-        error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
+        output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
     printf("Eval Error: %d\n", eval_error);
     free(rpn_tokens);
     free(tokens);
     // Reset the error object to a known state.
-    error->type = MEVAL_NO_ERROR;
-    error->char_index = 0;
-    memset(error->message, 0, MEVAL_ERROR_STRING_LEN);
+    output_error->type = MEVAL_NO_ERROR;
+    output_error->char_index = 0;
+    memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
     
     return output;
 }
 
-double meval_var(const char* input_string, struct MEvalError* error) {
+double meval(const char* input_string, struct MEvalError* error) {
+    MEvalVarArr empty_variables = {0};
+    return meval_internal(input_string, false, empty_variables, error);
+}
+
+double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error) {
     if (input_string == NULL) {
         error->type = MEVAL_LEX_ERROR;
         error->char_index = 0;
