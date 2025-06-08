@@ -17,7 +17,7 @@ enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_NOT_ENOUGH_OPERANDS /*mor
 #define MAX(a, b) (a > b ? a : b)
 
 #ifdef MEVAL_DB_ENABLED
-#define DBPRINT(format, ...) printf(format, __VA_ARGS__)
+#define DBPRINT(format, ...) printf(format, ##__VA_ARGS__)
 #else
 #define DBPRINT(format, ...)
 #endif

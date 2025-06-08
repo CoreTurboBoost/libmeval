@@ -11,7 +11,7 @@
 #define MIN(a, b) (a < b ? a : b)
 
 #ifdef MEVAL_DB_ENABLED
-#define DBPRINT(format, ...) printf(format, __VA_ARGS__)
+#define DBPRINT(format, ...) printf(format, ##__VA_ARGS__)
 #else
 #define DBPRINT(format, ...)
 #endif
