@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MEVAL_VERSION_MAJOR 1
+#define MEVAL_VERSION_MINOR 0
+
 enum MEVAL_ERROR {MEVAL_NO_ERROR, MEVAL_LEX_ERROR, MEVAL_PARSE_ERROR};
 #define MEVAL_ERROR_STRING_LEN 256
 #define MEVAL_VAR_NAME_MAX_LEN 32
