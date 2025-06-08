@@ -16,6 +16,12 @@ enum EVAL_ERROR {EE_NONE, EE_FAILED_MEM_ALLOCATION, EE_NOT_ENOUGH_OPERANDS /*mor
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a > b ? a : b)
 
+#ifdef MEVAL_DB_ENABLED
+#define DBPRINT(format, ...) printf(format, __VA_ARGS__)
+#else
+#define DBPRINT(format, ...)
+#endif
+
 typedef struct {
     const char* name;
     uint8_t precedence;
@@ -152,25 +158,25 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
 // debug printing
 void print_token_value(LexToken token) {
     if (token.type == LT_ERROR) {
-        printf("value=(error_str=%s)", token.value.error_str);
+        DBPRINT("value=(error_str=%s)", token.value.error_str);
     } else if (token.type == LT_VAR) {
-        printf("value=(var_name=%s)", token.value.var_name);
+        DBPRINT("value=(var_name=%s)", token.value.var_name);
     } else if (token.type == LT_NUMBER) {
-        printf("value=(number=%f)", token.value.number);
+        DBPRINT("value=(number=%f)", token.value.number);
     }  else if (token.type == LT_UNARY_FUNCTION) {
-        printf("value=(unary_function=%d)", token.value.unary_fn);
+        DBPRINT("value=(unary_function=%d)", token.value.unary_fn);
     } else if (token.type == LT_BINARY_FUNCTION) {
-        printf("value=(binary_function=%d)", token.value.binary_fn);
+        DBPRINT("value=(binary_function=%d)", token.value.binary_fn);
     } else if (token.type == LT_CONST) {
-        printf("value=(const_name=%d)", token.value.const_name);
+        DBPRINT("value=(const_name=%d)", token.value.const_name);
     } else {
-        printf("value=(UNKNOWN)");
+        DBPRINT("value=(UNKNOWN)");
     }
 }
 void print_token(LexToken token) {
-    printf("LexToken(type=%d, char_index=%u, error_type=%d, value=...). ", token.type, token.char_index, token.error_type);
+    DBPRINT("LexToken(type=%d, char_index=%u, error_type=%d, value=...). ", token.type, token.char_index, token.error_type);
     print_token_value(token);
-    printf("\n");
+    DBPRINT("\n");
 }
 
 bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, uint32_t* token_array_allocated_element_count, LexToken new_token) {
@@ -271,11 +277,11 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 *error_occured = true;
                 return;
             }
-            printf("Added new token: ");
+            DBPRINT("Added new token: ");
             print_token(token);
         } else if (isalpha(input_string[char_index]) || ispunct(input_string[char_index])) {
             // Add support for variables, (or have a separate lex function that adds support for variabled)
-            printf("Potential identifer...\n");
+            DBPRINT("Potential identifer...\n");
             bool is_punct = ispunct(input_string[char_index]);
             LexToken token = {0};
             token.type = LT_ERROR;
@@ -353,9 +359,9 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 token.type = LT_VAR;
                 token.error_type = LE_NONE;
                 snprintf(token.value.var_name, MIN(MEVAL_VAR_NAME_MAX_LEN, char_count+1), "%s", start_char);
-                printf("db: Found var with name '%s', at %ld, char_len: %d\n", token.value.var_name, start_char_index, char_count);
+                DBPRINT("db: Found var with name '%s', at %ld, char_len: %d\n", token.value.var_name, start_char_index, char_count);
             } else if (found_count != 1) { // found_count == 0, iden not found. found_count > 1, iden is ambiguous
-                printf("found_count: %d\n", found_count);
+                DBPRINT("found_count: %d\n", found_count);
                 token.type = LT_ERROR;
                 token.error_type = LE_UNRECOGNISED_IDENTIFER;
                 snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unrecognised or ambiguous identifier", char_index);
@@ -374,7 +380,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             if (token.type == LT_ERROR) {
                 *error_occured = true;
             }
-            printf("Added new token: ");
+            DBPRINT("Added new token: ");
             print_token(token);
         } else {
             LexToken token = {0};
@@ -389,7 +395,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 *output_lex_tokens = NULL;
                 return;
             }
-            printf("Added new token: ");
+            DBPRINT("Added new token: ");
             print_token(token);
         }
     }
@@ -423,7 +429,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     for (uint32_t input_tokens_index = 0; input_tokens_index < lex_token_count; input_tokens_index++) {
         const LexToken* current_token = &input_lex_tokens[input_tokens_index];
         if (current_token->type == LT_NUMBER || current_token->type == LT_CONST || (current_token->type == LT_VAR && allow_variables)) {
-            printf("Pushing number/const(/var if %d==true) into rpn output\n", allow_variables);
+            DBPRINT("Pushing number/const(/var if %d==true) into rpn output\n", allow_variables);
             bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
             if (!success) {
                 free(token_stack);
@@ -431,8 +437,8 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 return;
             }
         } else if (current_token->type == LT_OPEN_BRACKET) {
-            printf("Pushing ( i=%d into token stack\n", current_token->char_index);
-            printf("  open_bracket_count: %d\n", open_bracket_count);
+            DBPRINT("Pushing ( i=%d into token stack\n", current_token->char_index);
+            DBPRINT("  open_bracket_count: %d\n", open_bracket_count);
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
@@ -441,8 +447,8 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 return;
             }
         } else if (current_token->type == LT_CLOSE_BRACKET) {
-            printf("Found ) in input, now handling it ...\n");
-            printf("  Current open_bracket_count: %d\n", open_bracket_count);
+            DBPRINT("Found ) in input, now handling it ...\n");
+            DBPRINT("  Current open_bracket_count: %d\n", open_bracket_count);
             open_bracket_count--;
             /*
             if (token_stack_count == 0) {
@@ -454,17 +460,17 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             while (true) {
                 if (token_stack_count == 0) {
                     // missing an opening bracket (reached end of array, without a open bracket)
-                    printf("Mising open bracket, count: %d\n", open_bracket_count);
+                    DBPRINT("Mising open bracket, count: %d\n", open_bracket_count);
                     *return_state = RPNE_MISSING_OPEN_BRACKET;
                     free(token_stack);
                     return;
                 }
                 current_token = &token_stack[token_stack_count-1];
                 if (current_token->type == LT_OPEN_BRACKET) { // Only used as a marker on where to stop
-                    printf("  Found ( i=%d in closing bracket search, ending proccessing\n", current_token->char_index);
+                    DBPRINT("  Found ( i=%d in closing bracket search, ending proccessing\n", current_token->char_index);
                     break;
                 }
-                printf("  token (i=%d, t=%d) being added to output token stack\n", current_token->char_index, current_token->type);
+                DBPRINT("  token (i=%d, t=%d) being added to output token stack\n", current_token->char_index, current_token->type);
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
                     free(token_stack);
@@ -474,9 +480,9 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 token_stack_count--;
             }
         } else if (current_token->type == LT_UNARY_FUNCTION || current_token->type == LT_BINARY_FUNCTION) {
-            printf("Pushing function (type=%d) to token stack, ", current_token->type);
+            DBPRINT("Pushing function (type=%d) to token stack, ", current_token->type);
             print_token_value(*current_token);
-            printf("\n");
+            DBPRINT("\n");
             uint32_t stack_top_precedence = 0;
             if (token_stack_count > 0) {
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
@@ -488,11 +494,11 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                     break;
                 }
                 if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
-                    printf("  found ( on token stack (index=%d), ending function search processing\n", token_stack_count-1);
+                    DBPRINT("  found ( on token stack (index=%d), ending function search processing\n", token_stack_count-1);
                     token_stack_count--;
                     break;
                 }
-                printf("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
+                DBPRINT("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
                 if (!success) {
@@ -512,9 +518,9 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     }
     for (uint32_t i=token_stack_count-1; i+1 != 0; i--) {
         // pop all the remaining tokens from the tokens stack.
-        printf("Poping remaining token (i=%d, t=%d)\n", token_stack[i].char_index, token_stack[i].type);
+        DBPRINT("Poping remaining token (i=%d, t=%d)\n", token_stack[i].char_index, token_stack[i].type);
         if (token_stack[i].type == LT_OPEN_BRACKET) {
-            printf(" Ignoring open bracket at stack index %d\n", i);
+            DBPRINT(" Ignoring open bracket at stack index %d\n", i);
             continue; // Assume the closing bracket was ment to be at the end.
         }
         add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[i]);
@@ -560,16 +566,16 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             }
         } else if (current_token->type == LT_VAR && allow_variables) {
             int32_t var_index = -1;
-            printf("db: checking against %d variables\n", variables_array_element_count);
+            DBPRINT("db: checking against %d variables\n", variables_array_element_count);
             for (size_t i=0; i < variables_array_element_count; i++) {
-                printf("db:  Checking variable '%s'\n", variables_array_ptr[i].name);
+                DBPRINT("db:  Checking variable '%s'\n", variables_array_ptr[i].name);
                 if (strcmp(current_token->value.var_name, variables_array_ptr[i].name) == 0) {
                     var_index = i;
                     break;
                 }
             }
             if (var_index == -1) {
-                printf("db: Could not find variable with name '%s', but used in expression\n", current_token->value.var_name);
+                DBPRINT("db: Could not find variable with name '%s', but used in expression\n", current_token->value.var_name);
                 *return_state = EE_USE_OF_UNDEFINED_VAR;
                 free(number_stack);
                 return;
@@ -676,7 +682,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
-    printf("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
+    DBPRINT("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
     for (size_t i=0; i < lex_tokens_count; i++) {
         print_token(tokens[i]);
     }
@@ -697,11 +703,11 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
     uint32_t rpn_tokens_count = 0;
     gen_reverse_polish_notation(tokens, lex_tokens_count, support_variables, &rpn_tokens, &rpn_tokens_count, &rpn_error);
     for (size_t i=0; i < rpn_tokens_count; i++) {
-        printf("RPN Token: ");
+        DBPRINT("RPN Token: ");
         print_token(rpn_tokens[i]);
     }
     if (rpn_error != RPNE_NONE) {
-        printf("RPN Error occured (%d)\n", rpn_error);
+        DBPRINT("RPN Error occured (%d)\n", rpn_error);
         output_error->type = MEVAL_PARSE_ERROR;
         if (rpn_tokens_count != 0) {
             output_error->char_index = rpn_tokens[rpn_tokens_count-1].char_index;
@@ -725,7 +731,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
         return 0;
     }
-    printf("Eval Error: %d\n", eval_error);
+    DBPRINT("Eval Error: %d\n", eval_error);
     free(rpn_tokens);
     free(tokens);
     // Reset the error object to a known state.

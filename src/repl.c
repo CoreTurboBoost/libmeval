@@ -10,6 +10,12 @@
 #define REPL_INPUT_BUFFER_LEN 128
 #define MIN(a, b) (a < b ? a : b)
 
+#ifdef MEVAL_DB_ENABLED
+#define DBPRINT(format, ...) printf(format, __VA_ARGS__)
+#else
+#define DBPRINT(format, ...)
+#endif
+
 bool match_option(const char* option, char input_buffer[]) {
     size_t input_buf_len = strlen(input_buffer);
     if (input_buf_len < 1) {
@@ -65,13 +71,13 @@ MEvalVarArr parse_for_vars(char input[], size_t input_len) {
                 new_var.name_char_count = num_char_len;
                 char number_buf[256] = {0};
                 snprintf(number_buf, MIN(255, num_char_len+1), "%s", num_start);
-                printf("db: repl: number to be parsed: '%s'\n", number_buf);
+                DBPRINT("db: repl: number to be parsed: '%s'\n", number_buf);
                 new_var.value = atof(number_buf);
-                printf("db: repl: new_var.value = %f\n", new_var.value);
+                DBPRINT("db: repl: new_var.value = %f\n", new_var.value);
                 snprintf(new_var.name, MIN(MEVAL_VAR_NAME_MAX_LEN, var_char_len+1), "%s", var_start);
                 bool success = meval_append_variable(&vars, new_var);
                 if (success == false) {
-                    printf("db: repl: Failed to allocate new_var to vars array\n");
+                    DBPRINT("db: repl: Failed to allocate new_var to vars array\n");
                 }
             }
             var_start = NULL;
@@ -100,7 +106,7 @@ MEvalVarArr parse_for_vars(char input[], size_t input_len) {
 
 void print_vars(MEvalVarArr vars) {
     for (uint32_t i = 0; i<vars.elements_count; i++) {
-        printf("Var[%d] '%s' = %f\n", i, vars.arr_ptr[i].name, vars.arr_ptr[i].value);
+        DBPRINT("Var[%d] '%s' = %f\n", i, vars.arr_ptr[i].name, vars.arr_ptr[i].value);
     }
 }
 
@@ -151,7 +157,7 @@ int main(int argc, char* argv[]) {
     MEvalVarArr test_vars = {0};
     MEvalVar test_var = {.name="f", .name_char_count=1, .value=3};
     meval_append_variable(&test_vars, test_var);
-    printf("test vars: \n");
+    DBPRINT("test vars: \n");
     print_vars(test_vars);
     double test_output = meval_var("f+1", test_vars, &error);
     if (error.type == MEVAL_NO_ERROR) {
@@ -180,7 +186,7 @@ int main(int argc, char* argv[]) {
         if (include_vars) {
             get_input_line("vars >> ", vars_input, &vars_input_len);
             vars = parse_for_vars(vars_input, vars_input_len);
-            printf("Found vars: \n");
+            DBPRINT("Found vars: \n");
             print_vars(vars);
         }
 
