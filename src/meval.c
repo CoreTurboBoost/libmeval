@@ -393,6 +393,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             if (!success) {
                 free(*output_lex_tokens);
                 *output_lex_tokens = NULL;
+                *error_occured = true;
                 return;
             }
             DBPRINT("Added new token: ");
