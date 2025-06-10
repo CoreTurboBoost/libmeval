@@ -405,6 +405,11 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             print_token(token);
         }
     }
+    if (*output_lex_tokens_count == 0) {
+        free(*output_lex_tokens);
+        *output_lex_tokens = NULL;
+        *error_occured = true;
+    }
 }
 
 uint8_t get_fn_precedence(const LexToken* token_ptr) {
