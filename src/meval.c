@@ -694,6 +694,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
                 output_error->char_index = tokens[i].char_index;
                 strncpy(output_error->message, tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
                 output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+                free(tokens);
                 return 0;
             }
         }
@@ -719,6 +720,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
         error_string = get_rpn_error_str(rpn_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        free(tokens);
         return 0;
     }
 
@@ -731,6 +733,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
         error_string = get_eval_error_str(eval_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
+        free(tokens);
         return 0;
     }
     DBPRINT("Eval Error: %d\n", eval_error);
