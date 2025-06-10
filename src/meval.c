@@ -412,7 +412,6 @@ uint8_t get_fn_precedence(const LexToken* token_ptr) {
 }
 
 void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, bool allow_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) { // generate reverse polish notation (might move into lex function)
-    //
     // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
     *output_rpn_tokens_count = 0;
     uint32_t rpn_tokens_capcity = lex_token_count;
