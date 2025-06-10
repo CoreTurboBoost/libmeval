@@ -698,6 +698,7 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
             }
         }
         // Error occured ... But cannot find it?????
+        abort();
     }
     enum RPN_ERROR rpn_error = RPNE_NONE;
     LexToken* rpn_tokens = NULL;
