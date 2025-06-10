@@ -220,6 +220,11 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
      * Note: error_occured does not get set to false. That is the job of the caller.
      */
+    if (input_string_char_count == 0) {
+        *output_lex_tokens = NULL;
+        *output_lex_tokens_count = 0;
+        return;
+    }
     uint32_t output_lex_tokens_allocated_count = 4;
     *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
     bool token_handle_error_occured = false;
