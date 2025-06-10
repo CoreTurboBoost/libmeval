@@ -219,7 +219,11 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
      * Input: input_string, input_string_char_count.
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
      * Note: error_occured does not get set to false. That is the job of the caller.
+     *       output_lex_tokens and output_lex_tokens_count WILL get overridden,
+     *         these should not contain any important information.
      */
+    *output_lex_tokens = 0;
+    *output_lex_tokens = NULL;
     if (input_string_char_count == 0) {
         *output_lex_tokens = NULL;
         *output_lex_tokens_count = 0;
