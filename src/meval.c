@@ -224,9 +224,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
      */
     *output_lex_tokens = 0;
     *output_lex_tokens = NULL;
-    if (input_string_char_count == 0) {
-        *output_lex_tokens = NULL;
-        *output_lex_tokens_count = 0;
+    if (input_string_char_count == 0 || input_string == NULL) {
         return;
     }
     uint32_t output_lex_tokens_allocated_count = 4;
