@@ -733,8 +733,11 @@ static double meval_internal_run(const char* input_string, bool support_variable
     if (rpn_error != RPNE_NONE) {
         DBPRINT("RPN Error occured (%d)\n", rpn_error);
         output_error->type = MEVAL_PARSE_ERROR;
-        if (rpn_tokens_count != 0) {
-            output_error->char_index = rpn_tokens[rpn_tokens_count-1].char_index;
+        if ((*output_rpn_tokens_count) != 0) {
+            output_error->char_index = output_rpn_tokens[(*output_rpn_tokens_count)-1]->char_index;
+            free(*output_rpn_tokens);
+            *output_rpn_tokens = NULL;
+            *output_rpn_tokens_count = 0;
         } else {
             output_error->char_index = 0;
         }
