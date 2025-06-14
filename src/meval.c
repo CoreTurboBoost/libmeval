@@ -377,6 +377,10 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 token.type = LT_ERROR;
                 token.error_type = LE_UNRECOGNISED_IDENTIFER;
                 snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unrecognised or ambiguous identifier", token.char_index);
+                // NOTE: Variables are not considered, so if a variable like
+                //  'a' is used, that could still be considered ambigious if
+                //  there are two or more function that begin with the letter
+                //  'a'.
             }
             if (!needs_chopping) {
                 char_index -= char_count - chopped_char_count;
