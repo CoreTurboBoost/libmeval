@@ -745,29 +745,51 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
         error_string = get_rpn_error_str(rpn_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-        free(tokens);
-        return 0;
+        return;
     }
+}
+
+static double meval_internal_eval_tokens(LexToken* input_rpn_tokens, uint32_t input_rpn_tokens_count, bool support_variables, const MEvalVarArr variables, struct MEvalError* output_error) {
+
+    const char* error_string = NULL;
 
     double output = 0;
     enum EVAL_ERROR eval_error = EE_NONE;
-    eval_rpn_tokens(rpn_tokens, rpn_tokens_count, support_variables, variables.arr_ptr, variables.elements_count, &output, &eval_error);
+    eval_rpn_tokens(input_rpn_tokens, input_rpn_tokens_count, support_variables, variables.arr_ptr, variables.elements_count, &output, &eval_error);
     if (eval_error != EE_NONE) {
         output_error->type = MEVAL_PARSE_ERROR;
         output_error->char_index = 0; // To be determined.
         error_string = get_eval_error_str(eval_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-        free(tokens);
         return 0;
     }
     DBPRINT("Eval Error: %d\n", eval_error);
-    free(rpn_tokens);
-    free(tokens);
+    return output;
+}
+
+static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
+
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
     output_error->char_index = 0;
     memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
+
+    LexToken* rpn_tokens = NULL;
+    uint32_t rpn_tokens_count = 0;
+    meval_internal_compile_expr(input_string, support_variables, &rpn_tokens, &rpn_tokens_count, output_error);
+    if (output_error->type != MEVAL_NO_ERROR) {
+        if (rpn_tokens_count != 0) {
+            free(rpn_tokens);
+        }
+        return 0;
+    }
+
+    double output = meval_internal_eval_tokens(rpn_tokens, rpn_tokens_count, support_variables, variables, output_error);
+    free(rpn_tokens);
+    if (output_error->type != MEVAL_NO_ERROR) {
+        return 0;
+    }
     
     return output;
 }
