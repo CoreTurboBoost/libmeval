@@ -780,3 +780,52 @@ double meval(const char* input_string, struct MEvalError* error) {
 double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error) {
     return meval_internal_run(input_string, true, variables, error);
 }
+
+MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError* output_error) {
+    // Reset the error object to a known state.
+    output_error->type = MEVAL_NO_ERROR;
+    output_error->char_index = 0;
+    memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
+
+    MEvalCompiledExpr* compiled_expr = malloc(sizeof(MEvalCompiledExpr));
+    if (compiled_expr == NULL) {
+        output_error->type = MEVAL_PACKAGING_ERROR;
+        output_error->char_index = 0;
+        snprintf(output_error->message, MEVAL_ERROR_STRING_LEN, "Heap allocation failed");
+        return NULL;
+    }
+    meval_internal_compile_expr(input_string, true, &compiled_expr->tokens, &compiled_expr->tokens_count, output_error);
+    return compiled_expr;
+}
+
+double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr variables, struct MEvalError* output_error) {
+    // Reset the error object to a known state.
+    output_error->type = MEVAL_NO_ERROR;
+    output_error->char_index = 0;
+    memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
+
+    if (compiled_expr == NULL) {
+        output_error->type = MEVAL_PACKAGING_ERROR;
+        output_error->char_index = 0;
+        snprintf(output_error->message, MEVAL_ERROR_STRING_LEN, "Compiled expression is empty");
+        return 0;
+    }
+
+    double output = meval_internal_eval_tokens(compiled_expr->tokens, compiled_expr->tokens_count, true, variables, output_error);
+    if (output_error->type != MEVAL_NO_ERROR) {
+        return 0;
+    }
+    return output;
+}
+
+void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr) {
+    if ((*compiled_expr) != NULL) {
+        if ((*compiled_expr)->tokens != NULL) {
+            free((*compiled_expr)->tokens);
+            (*compiled_expr)->tokens = NULL;
+            (*compiled_expr)->tokens_count = 0;
+        }
+        free(*compiled_expr);
+        *compiled_expr = NULL;
+    }
+}

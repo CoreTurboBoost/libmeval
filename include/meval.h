@@ -30,8 +30,11 @@ typedef struct MEvalCompiledExpr MEvalCompiledExpr;
 
 double meval(const char* input_string, struct MEvalError* error);
 double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error);
+MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError* output_error);
+double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr variables, struct MEvalError* output_error);
 
 bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable);
 void meval_free_variable_arr(MEvalVarArr *variables_array);
+void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr);
 
 struct MEvalTokens; // A array of processed tokens (in their RPN form, allows for quick evaluation)
