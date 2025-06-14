@@ -675,7 +675,7 @@ void free_variable_arr(MEvalVarArr *variables_array) {
     variables_array->capacity_elements = 0;
 }
 
-double meval_internal(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
+static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
     if (input_string == NULL) {
         output_error->type = MEVAL_LEX_ERROR;
         output_error->char_index = 0;
@@ -761,9 +761,9 @@ double meval_internal(const char* input_string, bool support_variables, MEvalVar
 
 double meval(const char* input_string, struct MEvalError* error) {
     MEvalVarArr empty_variables = {0};
-    return meval_internal(input_string, false, empty_variables, error);
+    return meval_internal_run(input_string, false, empty_variables, error);
 }
 
 double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error) {
-    return meval_internal(input_string, true, variables, error);
+    return meval_internal_run(input_string, true, variables, error);
 }
