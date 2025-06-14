@@ -371,7 +371,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 token.type = LT_VAR;
                 token.error_type = LE_NONE;
                 snprintf(token.value.var_name, MIN(MEVAL_VAR_NAME_MAX_LEN, char_count+1), "%s", start_char);
-                DBPRINT("db: Found var with name '%s', at %ld, char_len: %d\n", token.value.var_name, start_char_index, char_count);
+                DBPRINT("db: Found var with name '%s', at %ld, char_len: %d within expression\n", token.value.var_name, start_char_index, char_count);
             } else if (found_count != 1) { // found_count == 0, iden not found. found_count > 1, iden is ambiguous
                 DBPRINT("found_count: %d\n", found_count);
                 token.type = LT_ERROR;

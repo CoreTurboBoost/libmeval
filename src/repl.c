@@ -69,12 +69,14 @@ MEvalVarArr parse_for_vars(char input[], size_t input_len) {
             if (var_start != NULL && num_start != NULL) {
                 MEvalVar new_var = {0};
                 new_var.name_char_count = num_char_len;
+                DBPRINT("new_var.name_char_count: %d\n", new_var.name_char_count);
                 char number_buf[256] = {0};
                 snprintf(number_buf, MIN(255, num_char_len+1), "%s", num_start);
                 DBPRINT("db: repl: number to be parsed: '%s'\n", number_buf);
                 new_var.value = atof(number_buf);
                 DBPRINT("db: repl: new_var.value = %f\n", new_var.value);
                 snprintf(new_var.name, MIN(MEVAL_VAR_NAME_MAX_LEN, var_char_len+1), "%s", var_start);
+                DBPRINT("db: repl: new_var.name = %s\n", new_var.name);
                 bool success = meval_append_variable(&vars, new_var);
                 if (success == false) {
                     DBPRINT("db: repl: Failed to allocate new_var to vars array\n");
