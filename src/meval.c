@@ -684,51 +684,52 @@ void free_variable_arr(MEvalVarArr *variables_array) {
     variables_array->capacity_elements = 0;
 }
 
-static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
+static void meval_internal_compile_expr(const char* input_string, bool support_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, struct MEvalError* output_error) {
+    *output_rpn_tokens = NULL;
+    *output_rpn_tokens_count = 0;
     if (input_string == NULL) {
         output_error->type = MEVAL_LEX_ERROR;
         output_error->char_index = 0;
         strncpy(output_error->message, "No Input Given", MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-        return 0;
+        return;
     }
-    LexToken* tokens = NULL;
+    LexToken* lex_tokens = NULL;
     uint32_t lex_tokens_count = 0;
     bool error_occured = false;
     const char* error_string = NULL;
-    gen_lex_tokens(input_string, strlen(input_string), support_variables, &tokens, &lex_tokens_count, &error_occured);
+    gen_lex_tokens(input_string, strlen(input_string), support_variables, &lex_tokens, &lex_tokens_count, &error_occured);
     if (lex_tokens_count == 0) {
         output_error->type = MEVAL_LEX_ERROR;
         output_error->char_index = 0;
         strncpy(output_error->message, "Empty/Invalid Text Input", MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-        return 0;
+        return;
     }
-    DBPRINT("%d tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
+    DBPRINT("%d lex_tokens emitted, error_occured: %d\n", lex_tokens_count, error_occured);
     for (size_t i=0; i < lex_tokens_count; i++) {
-        print_token(tokens[i]);
+        print_token(lex_tokens[i]);
     }
     if (error_occured) {
         for (size_t i=0; i < lex_tokens_count; i++) {
-            if (tokens[i].type == LT_ERROR) {
+            if (lex_tokens[i].type == LT_ERROR) {
                 output_error->type = MEVAL_LEX_ERROR;
-                output_error->char_index = tokens[i].char_index;
-                strncpy(output_error->message, tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
+                output_error->char_index = lex_tokens[i].char_index;
+                strncpy(output_error->message, lex_tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
                 output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-                free(tokens);
-                return 0;
+                free(lex_tokens);
+                return;
             }
         }
         // Error occured ... But cannot find it?????
         abort();
     }
     enum RPN_ERROR rpn_error = RPNE_NONE;
-    LexToken* rpn_tokens = NULL;
-    uint32_t rpn_tokens_count = 0;
-    gen_reverse_polish_notation(tokens, lex_tokens_count, support_variables, &rpn_tokens, &rpn_tokens_count, &rpn_error);
-    for (size_t i=0; i < rpn_tokens_count; i++) {
+    gen_reverse_polish_notation(lex_tokens, lex_tokens_count, support_variables, output_rpn_tokens, output_rpn_tokens_count, &rpn_error);
+    free(lex_tokens);
+    for (size_t i=0; i < (*output_rpn_tokens_count); i++) {
         DBPRINT("RPN Token: ");
-        print_token(rpn_tokens[i]);
+        print_token((*output_rpn_tokens)[i]);
     }
     if (rpn_error != RPNE_NONE) {
         DBPRINT("RPN Error occured (%d)\n", rpn_error);
