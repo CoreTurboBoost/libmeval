@@ -91,6 +91,7 @@ MEvalVarArr parse_for_vars(char input[], size_t input_len) {
         } 
         if (var_start == NULL) {
             var_start = &input[i];
+            in_var_stage = true;
         } 
         if (num_start == NULL && !in_var_stage) {
             num_start = &input[i];
