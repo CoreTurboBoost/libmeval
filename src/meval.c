@@ -437,7 +437,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     uint32_t token_stack_capacity = 4;
     uint32_t token_stack_count = 0;
     LexToken* token_stack = malloc(token_stack_capacity*sizeof(LexToken));
-    if (*output_rpn_tokens == NULL || token_stack == NULL) {
+    if ((*output_rpn_tokens) == NULL || token_stack == NULL) {
         free(*output_rpn_tokens); // If NULL does nothing.
         free(token_stack);
         *return_state = RPNE_FAILED_MEM_ALLOCATION;
