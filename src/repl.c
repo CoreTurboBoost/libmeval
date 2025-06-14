@@ -171,6 +171,20 @@ int main(int argc, char* argv[]) {
     
     bool include_vars = false;
 
+    const char* test_compile_expression = "5+12+f";
+    MEvalCompiledExpr* compiled_expression = meval_var_compile(test_compile_expression, &error);
+    if (error.type == MEVAL_NO_ERROR) {
+        printf("expression '%s' has no errors\n", test_compile_expression);
+        double compiled_value = meval_var_eval_cexpr(compiled_expression, test_vars, &error);
+        if (error.type != MEVAL_NO_ERROR) {
+            printf("Compiled expression '%s' evaluation failed, %d:%s\n", test_compile_expression, error.type, error.message);
+        } else {
+            printf("Compiled expression '%s', evalued to %f\n", test_compile_expression, compiled_value);
+        }
+    } else {
+        printf("expression '%s' had errores: %d:%s\n", test_compile_expression, error.type, error.message);
+    }
+
     double value = 0;
     while (true) {
         /*
