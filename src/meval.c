@@ -123,6 +123,11 @@ typedef struct {
     uint32_t array_capacity;
 } LexTokenArray;
 
+typedef struct MEvalCompiledExpr {
+    LexToken* tokens;
+    uint32_t tokens_count;
+} MEvalCompiledExpr;
+
 const char* get_rpn_error_str(enum RPN_ERROR error) {
     switch (error) {
         case RPNE_NONE:

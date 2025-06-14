@@ -26,6 +26,8 @@ typedef struct {
     uint32_t capacity_elements;
 } MEvalVarArr;
 
+typedef struct MEvalCompiledExpr MEvalCompiledExpr;
+
 double meval(const char* input_string, struct MEvalError* error);
 double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error);
 
