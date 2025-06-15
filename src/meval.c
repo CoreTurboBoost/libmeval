@@ -219,13 +219,20 @@ bool match_and_add_char(const char input, const char expected_char, enum LEX_TYP
     return false;
 }
 
-void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, MEvalVarArr expected_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
     /*
      * Input: input_string, input_string_char_count.
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
      * Note: error_occured does not get set to false. That is the job of the caller.
      *       output_lex_tokens and output_lex_tokens_count WILL get overridden,
      *         these should not contain any important information.
+     *       'expected_variables' maybe empty, if there are no expected variables. 
+     *       When 'expected_variables' is empty, every unrecognised or
+     *         ambigious function is assumed to be a variable.
+     *       When 'expected_variables' is not empty, only variables that are
+     *         part of 'expected_variables' and unrecognised functions (includes
+     *         partially named functions) are treated as variables.
+     *       The values for each variable in 'expected_variables' are ignored.
      */
     *output_lex_tokens = 0;
     *output_lex_tokens = NULL;
@@ -366,8 +373,21 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         found_count++;
                     }
                 }
+                if (chopped_char_count == char_count) {
+                    for (uint32_t i=0; i < expected_variables.elements_count; i++) {
+                        if (strncmp(expected_variables.arr_ptr[i].name, start_char, chopped_char_count) == 0) {
+                            token.type = LT_CONST;
+                            token.value.const_name = (enum CONSTANT_NAMES)i;
+                            token.error_type = LE_NONE;
+                            needs_chopping = false;
+                            found_count = 0;
+                            break;
+                        }
+                    }
+                }
             }
-            if (found_count == 0 && allow_variables) {
+            if ((found_count != 1 && allow_variables && expected_variables.elements_count == 0)
+                    || (found_count == 0 && allow_variables && expected_variables.elements_count > 0)) { // If identifier not found, or is ambigious assume it is a variable.
                 token.type = LT_VAR;
                 token.error_type = LE_NONE;
                 snprintf(token.value.var_name, MIN(MEVAL_VAR_NAME_MAX_LEN, char_count+1), "%s", start_char);
@@ -377,10 +397,6 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 token.type = LT_ERROR;
                 token.error_type = LE_UNRECOGNISED_IDENTIFER;
                 snprintf(token.value.error_str, LEXEAME_CHAR_COUNT, "[%u] Unrecognised or ambiguous identifier", token.char_index);
-                // NOTE: Variables are not considered, so if a variable like
-                //  'a' is used, that could still be considered ambigious if
-                //  there are two or more function that begin with the letter
-                //  'a'.
             }
             if (!needs_chopping) {
                 char_index -= char_count - chopped_char_count;
@@ -684,7 +700,14 @@ void free_variable_arr(MEvalVarArr *variables_array) {
     variables_array->capacity_elements = 0;
 }
 
-static void meval_internal_compile_expr(const char* input_string, bool support_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, struct MEvalError* output_error) {
+static void meval_internal_compile_expr(const char* input_string, bool support_variables, MEvalVarArr expected_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, struct MEvalError* output_error) {
+    /*
+     * Note: 'expected_variables' maybe empty. If its empty, every
+     *    unrecognised/ambigious function is assumed to be a variable.
+     * Note: If 'expected_variables' is not empty (contains some varibles within
+     *    it), only unrecognised functions or identifiers that match the
+     *    expected variables name exactly are assumed as variables.
+     */
     *output_rpn_tokens = NULL;
     *output_rpn_tokens_count = 0;
     if (input_string == NULL) {
@@ -698,7 +721,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
     uint32_t lex_tokens_count = 0;
     bool error_occured = false;
     const char* error_string = NULL;
-    gen_lex_tokens(input_string, strlen(input_string), support_variables, &lex_tokens, &lex_tokens_count, &error_occured);
+    gen_lex_tokens(input_string, strlen(input_string), support_variables, expected_variables, &lex_tokens, &lex_tokens_count, &error_occured);
     if (lex_tokens_count == 0) {
         output_error->type = MEVAL_LEX_ERROR;
         output_error->char_index = 0;
@@ -775,9 +798,15 @@ static double meval_internal_run(const char* input_string, bool support_variable
     output_error->char_index = 0;
     memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
 
+    MEvalVarArr empty_variable_array = {0};
+
+    if (!support_variables) {
+        variables = empty_variable_array;
+    }
+
     LexToken* rpn_tokens = NULL;
     uint32_t rpn_tokens_count = 0;
-    meval_internal_compile_expr(input_string, support_variables, &rpn_tokens, &rpn_tokens_count, output_error);
+    meval_internal_compile_expr(input_string, support_variables, variables, &rpn_tokens, &rpn_tokens_count, output_error);
     if (output_error->type != MEVAL_NO_ERROR) {
         if (rpn_tokens_count != 0) {
             free(rpn_tokens);
@@ -809,6 +838,8 @@ MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError
     output_error->char_index = 0;
     memset(output_error->message, 0, MEVAL_ERROR_STRING_LEN);
 
+    MEvalVarArr empty_variable_array = {0};
+
     MEvalCompiledExpr* compiled_expr = malloc(sizeof(MEvalCompiledExpr));
     if (compiled_expr == NULL) {
         output_error->type = MEVAL_PACKAGING_ERROR;
@@ -816,7 +847,7 @@ MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError
         snprintf(output_error->message, MEVAL_ERROR_STRING_LEN, "Heap allocation failed");
         return NULL;
     }
-    meval_internal_compile_expr(input_string, true, &compiled_expr->tokens, &compiled_expr->tokens_count, output_error);
+    meval_internal_compile_expr(input_string, true, empty_variable_array, &compiled_expr->tokens, &compiled_expr->tokens_count, output_error);
     return compiled_expr;
 }
 
