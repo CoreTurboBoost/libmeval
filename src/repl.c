@@ -184,6 +184,7 @@ int main(int argc, char* argv[]) {
     } else {
         printf("expression '%s' had errores: %d:%s\n", test_compile_expression, error.type, error.message);
     }
+    meval_free_compiled_expr(&compiled_expression);
 
     double value = 0;
     while (true) {
