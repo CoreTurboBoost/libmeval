@@ -882,3 +882,12 @@ void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr) {
         *compiled_expr = NULL;
     }
 }
+
+void meval_free_variable_arr(MEvalVarArr *variables_array) {
+    if (variables_array->arr_ptr != NULL) {
+        free(variables_array->arr_ptr);
+        variables_array->arr_ptr = NULL;
+    }
+    variables_array->elements_count = 0;
+    variables_array->capacity_elements = 0;
+}
