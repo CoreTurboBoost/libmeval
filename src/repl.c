@@ -233,6 +233,7 @@ int main(int argc, char* argv[]) {
 
         if (include_vars) {
             value = meval_var(input, vars, &error);
+            meval_free_variable_arr(&vars);
         } else {
             value = meval(input, &error);
         }
