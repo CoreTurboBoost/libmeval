@@ -7,6 +7,8 @@ objs/meval.o: src/meval.c
 
 repl: src/repl.c
 	$(CC) ./src/repl.c -g -o meval-repl -Wall -Wpedantic -fsanitize=address -DMEVAL_DB_ENABLED src/meval.c -Wall -Wpedantic -I./include -lm
+repl-rel: src/repl.c
+	$(CC) ./src/repl.c -g -o meval-repl -Wall -Wpedantic -fsanitize=address src/meval.c -Wall -Wpedantic -I./include -lm
 
 clean:
 	rm ./objs/*.o
