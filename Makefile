@@ -13,3 +13,10 @@ repl-rel: src/repl.c
 clean:
 	rm ./objs/*.o
 	rm ./lib/*.a
+
+./objs:
+	mkdir objs
+./lib:
+	mkdir lib
+
+.PHONY: clean package
