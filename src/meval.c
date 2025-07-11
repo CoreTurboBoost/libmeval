@@ -8,6 +8,13 @@
 #include <stdio.h> // snprintf
 #include "meval/meval.h"
 
+#ifndef MEVAL_MALLOC
+#define MEVAL_MALLOC(x) malloc(x)
+#endif
+#ifndef MEVAL_REALLOCARRAY
+#define MEVAL_REALLOCARRAY(ptr, nmemb, size) reallocarray(ptr, nmemb, size)
+#endif
+
 enum LEX_TYPE {LT_ERROR, LT_VAR, LT_NUMBER, LT_CONST, LT_UNARY_FUNCTION, LT_BINARY_FUNCTION, LT_OPEN_BRACKET, LT_CLOSE_BRACKET};
 enum LEX_ERROR {LE_NONE, LE_UNRECOGNISED_CHAR, LE_UNRECOGNISED_IDENTIFER, LE_MANY_DECIMAL_POINTS};
 enum RPN_ERROR {RPNE_NONE, RPNE_FAILED_MEM_ALLOCATION, RPNE_MISSING_OPEN_BRACKET, RPNE_MISSING_CLOSING_BRACKET};
@@ -188,7 +195,7 @@ bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, 
     /* Append the token 'new_token' to the end of the dynamic array '*token_array_ptr' */
     if (*token_array_element_count +1 >= *token_array_allocated_element_count) {
         uint32_t new_allocated_count = *token_array_allocated_element_count*1.5;
-        LexToken* tmp = reallocarray(*token_array_ptr, new_allocated_count, sizeof(LexToken));
+        LexToken* tmp = MEVAL_REALLOCARRAY(*token_array_ptr, new_allocated_count, sizeof(LexToken));
         if (tmp == NULL) {
             return false;
         }
@@ -240,7 +247,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
         return;
     }
     uint32_t output_lex_tokens_allocated_count = 4;
-    *output_lex_tokens = malloc(sizeof(LexToken)*output_lex_tokens_allocated_count);
+    *output_lex_tokens = MEVAL_MALLOC(sizeof(LexToken)*output_lex_tokens_allocated_count);
     bool token_handle_error_occured = false;
     for (uint32_t char_index = 0; char_index < input_string_char_count; char_index++) {
         if (isspace(input_string[char_index])) { continue; }
@@ -455,10 +462,10 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     *return_state = RPNE_NONE;
     *output_rpn_tokens_count = 0;
     uint32_t rpn_tokens_capcity = lex_token_count;
-    *output_rpn_tokens = malloc(rpn_tokens_capcity*sizeof(LexToken));
+    *output_rpn_tokens = MEVAL_MALLOC(rpn_tokens_capcity*sizeof(LexToken));
     uint32_t token_stack_capacity = 4;
     uint32_t token_stack_count = 0;
-    LexToken* token_stack = malloc(token_stack_capacity*sizeof(LexToken));
+    LexToken* token_stack = MEVAL_MALLOC(token_stack_capacity*sizeof(LexToken));
     if ((*output_rpn_tokens) == NULL || token_stack == NULL) {
         free(*output_rpn_tokens); // If NULL does nothing.
         free(token_stack);
@@ -573,7 +580,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
     *return_state = EE_NONE;
     uint32_t number_stack_count = 0;
     uint32_t number_stack_capacity = 8;
-    LexToken* number_stack = malloc(number_stack_capacity*sizeof(LexToken));
+    LexToken* number_stack = MEVAL_MALLOC(number_stack_capacity*sizeof(LexToken));
     if (number_stack == NULL) {
         *return_state = EE_FAILED_MEM_ALLOCATION;
         return;
@@ -684,7 +691,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
 bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) {
     if (variables_array->elements_count >= variables_array->capacity_elements) {
         uint32_t new_capacity = MAX(variables_array->capacity_elements * 1.5, 3);
-        MEvalVar* tmp = reallocarray(variables_array->arr_ptr, new_capacity, sizeof(MEvalVar));
+        MEvalVar* tmp = MEVAL_REALLOCARRAY(variables_array->arr_ptr, new_capacity, sizeof(MEvalVar));
         if (tmp == NULL) {
             return false;
         }
@@ -842,7 +849,7 @@ MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError
 
     MEvalVarArr empty_variable_array = {0};
 
-    MEvalCompiledExpr* compiled_expr = malloc(sizeof(MEvalCompiledExpr));
+    MEvalCompiledExpr* compiled_expr = MEVAL_MALLOC(sizeof(MEvalCompiledExpr));
     if (compiled_expr == NULL) {
         output_error->type = MEVAL_PACKAGING_ERROR;
         output_error->char_index = 0;
