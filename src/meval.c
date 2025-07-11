@@ -777,6 +777,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
         }
         MEVAL_FREE(*output_rpn_tokens);
         *output_rpn_tokens = NULL;
+        *output_rpn_tokens_count = 0;
         error_string = get_rpn_error_str(rpn_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
