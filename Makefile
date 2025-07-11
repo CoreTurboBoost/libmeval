@@ -1,8 +1,8 @@
 
-package: objs/meval.o
+package: objs/meval.o ./objs ./lib
 	ar -rcs ./lib/libmeval.a ./objs/meval.o
 
-objs/meval.o: src/meval.c
+objs/meval.o: src/meval.c ./objs
 	$(CC) -Wall -Wpedantic -O3 -c -s -I./include src/meval.c -o objs/meval.o
 
 repl: src/repl.c
