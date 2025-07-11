@@ -771,12 +771,12 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
         output_error->type = MEVAL_PARSE_ERROR;
         if ((*output_rpn_tokens_count) != 0) {
             output_error->char_index = output_rpn_tokens[(*output_rpn_tokens_count)-1]->char_index;
-            MEVAL_FREE(*output_rpn_tokens);
-            *output_rpn_tokens = NULL;
             *output_rpn_tokens_count = 0;
         } else {
             output_error->char_index = 0;
         }
+        MEVAL_FREE(*output_rpn_tokens);
+        *output_rpn_tokens = NULL;
         error_string = get_rpn_error_str(rpn_error);
         strncpy(output_error->message, error_string, MEVAL_ERROR_STRING_LEN);
         output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
