@@ -14,6 +14,9 @@
 #ifndef MEVAL_REALLOCARRAY
 #define MEVAL_REALLOCARRAY(ptr, nmemb, size) reallocarray(ptr, nmemb, size)
 #endif
+#ifndef MEVAL_FREE
+#define MEVAL_FREE(ptr) free(ptr)
+#endif
 
 enum LEX_TYPE {LT_ERROR, LT_VAR, LT_NUMBER, LT_CONST, LT_UNARY_FUNCTION, LT_BINARY_FUNCTION, LT_OPEN_BRACKET, LT_CLOSE_BRACKET};
 enum LEX_ERROR {LE_NONE, LE_UNRECOGNISED_CHAR, LE_UNRECOGNISED_IDENTIFER, LE_MANY_DECIMAL_POINTS};
@@ -253,14 +256,14 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
         if (isspace(input_string[char_index])) { continue; }
         if (match_and_add_char(input_string[char_index], '(', LT_OPEN_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
         if (token_handle_error_occured) {
-            free(*output_lex_tokens);
+            MEVAL_FREE(*output_lex_tokens);
             *output_lex_tokens = NULL;
             *error_occured = true;
             return;
         }
         } else if (match_and_add_char(input_string[char_index], ')', LT_CLOSE_BRACKET, char_index, output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, &token_handle_error_occured)) {
             if (token_handle_error_occured) {
-                free(*output_lex_tokens);
+                MEVAL_FREE(*output_lex_tokens);
                 *output_lex_tokens = NULL;
                 *error_occured = true;
                 return;
@@ -298,7 +301,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             }
             bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
             if (!success) {
-                free(*output_lex_tokens);
+                MEVAL_FREE(*output_lex_tokens);
                 *output_lex_tokens = NULL;
                 *error_occured = true;
                 return;
@@ -410,7 +413,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             }
             bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
             if (!success) {
-                free(*output_lex_tokens);
+                MEVAL_FREE(*output_lex_tokens);
                 *output_lex_tokens = NULL;
                 *error_occured = true;
                 return;
@@ -430,7 +433,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             *error_occured = true;
             bool success = add_token(output_lex_tokens, output_lex_tokens_count, &output_lex_tokens_allocated_count, token);
             if (!success) {
-                free(*output_lex_tokens);
+                MEVAL_FREE(*output_lex_tokens);
                 *output_lex_tokens = NULL;
                 *error_occured = true;
                 return;
@@ -440,7 +443,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
         }
     }
     if (*output_lex_tokens_count == 0) {
-        free(*output_lex_tokens);
+        MEVAL_FREE(*output_lex_tokens);
         *output_lex_tokens = NULL;
         *error_occured = true;
     }
@@ -467,8 +470,8 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
     uint32_t token_stack_count = 0;
     LexToken* token_stack = MEVAL_MALLOC(token_stack_capacity*sizeof(LexToken));
     if ((*output_rpn_tokens) == NULL || token_stack == NULL) {
-        free(*output_rpn_tokens); // If NULL does nothing.
-        free(token_stack);
+        MEVAL_FREE(*output_rpn_tokens); // If NULL does nothing.
+        MEVAL_FREE(token_stack);
         *return_state = RPNE_FAILED_MEM_ALLOCATION;
         return;
     }
@@ -479,7 +482,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             DBPRINT("Pushing number/const(/var if %d==true) into rpn output\n", allow_variables);
             bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
             if (!success) {
-                free(token_stack);
+                MEVAL_FREE(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
             }
@@ -489,7 +492,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             open_bracket_count++;
             bool success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                free(token_stack);
+                MEVAL_FREE(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
             }
@@ -500,7 +503,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             /*
             if (token_stack_count == 0) {
                 *return_state = RPNE_MISSING_OPEN_BRACKET;
-                free(token_stack);
+                MEVAL_FREE(token_stack);
                 return;
             }
             */
@@ -508,7 +511,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 if (token_stack_count == 0) {
                     // missing an opening bracket (reached end of array, without a open bracket)
                     DBPRINT("Mising open bracket, count: %d\n", open_bracket_count);
-                    free(token_stack);
+                    MEVAL_FREE(token_stack);
                     *return_state = RPNE_MISSING_OPEN_BRACKET;
                     return;
                 }
@@ -520,7 +523,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 DBPRINT("  token (i=%d, t=%d) being added to output token stack\n", current_token->char_index, current_token->type);
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
-                    free(token_stack);
+                    MEVAL_FREE(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
                 }
@@ -549,7 +552,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
                 if (!success) {
-                    free(token_stack);
+                    MEVAL_FREE(token_stack);
                     *return_state = RPNE_FAILED_MEM_ALLOCATION;
                     return;
                 }
@@ -557,7 +560,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
             success = add_token(&token_stack, &token_stack_count, &token_stack_capacity, *current_token);
             if (!success) {
-                free(token_stack);
+                MEVAL_FREE(token_stack);
                 *return_state = RPNE_FAILED_MEM_ALLOCATION;
                 return;
             }
@@ -572,7 +575,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
         }
         add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[i]);
     }
-    free(token_stack);
+    MEVAL_FREE(token_stack);
 }
 
 void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_token_count, bool allow_variables, const MEvalVar* variables_array_ptr, const uint32_t variables_array_element_count, double* output_value, enum EVAL_ERROR *return_state) {
@@ -592,7 +595,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, *current_token);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
         } else if (current_token->type == LT_CONST) {
@@ -608,7 +611,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
         } else if (current_token->type == LT_VAR && allow_variables) {
@@ -624,7 +627,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             if (var_index == -1) {
                 DBPRINT("db: Could not find variable with name '%s', but used in expression\n", current_token->value.var_name);
                 *return_state = EE_USE_OF_UNDEFINED_VAR;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
             LexToken new_token = *current_token;
@@ -633,13 +636,13 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, new_token);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
         } else if (current_token->type == LT_UNARY_FUNCTION) {
             if (number_stack_count < 1) {
                 *return_state = EE_NOT_ENOUGH_OPERANDS;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
             LexToken evaluated_value = {0};
@@ -651,14 +654,14 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
             // use the precedence to determine what to do with this
         } else if (current_token->type == LT_BINARY_FUNCTION) {
             if (number_stack_count < 2) {
                 *return_state = EE_NOT_ENOUGH_OPERANDS;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
             LexToken evaluated_value = {0};
@@ -671,7 +674,7 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
             success = add_token(&number_stack, &number_stack_count, &number_stack_capacity, evaluated_value);
             if (!success) {
                 *return_state = EE_FAILED_MEM_ALLOCATION;
-                free(number_stack);
+                MEVAL_FREE(number_stack);
                 return;
             }
             // use the precedence to determine what to do with this
@@ -679,13 +682,13 @@ void eval_rpn_tokens(const LexToken* input_rpn_tokens, const uint32_t input_rpn_
     }
     if (number_stack_count != 1) {
         *return_state = EE_TOO_MANY_OPERANDS;
-        free(number_stack);
+        MEVAL_FREE(number_stack);
         return;
     }
     // TODO: Go through every element, and make sure that a binary function does not have another binary function adjacent (directly next to it).
     //    Unary functions can be ignored, because unary functions can have parameters from the left or the right, or may even have another unary function next to it.
     *output_value = number_stack[0].value.number;
-    free(number_stack);
+    MEVAL_FREE(number_stack);
 }
 
 bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) {
@@ -704,7 +707,7 @@ bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable) 
 }
 
 void free_variable_arr(MEvalVarArr *variables_array) {
-    free(variables_array->arr_ptr);
+    MEVAL_FREE(variables_array->arr_ptr);
     variables_array->elements_count = 0;
     variables_array->capacity_elements = 0;
 }
@@ -749,7 +752,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
                 output_error->char_index = lex_tokens[i].char_index;
                 strncpy(output_error->message, lex_tokens[i].value.error_str, MEVAL_ERROR_STRING_LEN);
                 output_error->message[MEVAL_ERROR_STRING_LEN-1] = '\0';
-                free(lex_tokens);
+                MEVAL_FREE(lex_tokens);
                 return;
             }
         }
@@ -758,7 +761,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
     }
     enum RPN_ERROR rpn_error = RPNE_NONE;
     gen_reverse_polish_notation(lex_tokens, lex_tokens_count, support_variables, output_rpn_tokens, output_rpn_tokens_count, &rpn_error);
-    free(lex_tokens);
+    MEVAL_FREE(lex_tokens);
     for (size_t i=0; i < (*output_rpn_tokens_count); i++) {
         DBPRINT("RPN Token: ");
         print_token((*output_rpn_tokens)[i]);
@@ -768,7 +771,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
         output_error->type = MEVAL_PARSE_ERROR;
         if ((*output_rpn_tokens_count) != 0) {
             output_error->char_index = output_rpn_tokens[(*output_rpn_tokens_count)-1]->char_index;
-            free(*output_rpn_tokens);
+            MEVAL_FREE(*output_rpn_tokens);
             *output_rpn_tokens = NULL;
             *output_rpn_tokens_count = 0;
         } else {
@@ -818,13 +821,13 @@ static double meval_internal_run(const char* input_string, bool support_variable
     meval_internal_compile_expr(input_string, support_variables, variables, &rpn_tokens, &rpn_tokens_count, output_error);
     if (output_error->type != MEVAL_NO_ERROR) {
         if (rpn_tokens_count != 0) {
-            free(rpn_tokens);
+            MEVAL_FREE(rpn_tokens);
         }
         return 0;
     }
 
     double output = meval_internal_eval_tokens(rpn_tokens, rpn_tokens_count, support_variables, variables, output_error);
-    free(rpn_tokens);
+    MEVAL_FREE(rpn_tokens);
     if (output_error->type != MEVAL_NO_ERROR) {
         return 0;
     }
@@ -883,18 +886,18 @@ double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr 
 void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr) {
     if ((*compiled_expr) != NULL) {
         if ((*compiled_expr)->tokens != NULL) {
-            free((*compiled_expr)->tokens);
+            MEVAL_FREE((*compiled_expr)->tokens);
             (*compiled_expr)->tokens = NULL;
             (*compiled_expr)->tokens_count = 0;
         }
-        free(*compiled_expr);
+        MEVAL_FREE(*compiled_expr);
         *compiled_expr = NULL;
     }
 }
 
 void meval_free_variable_arr(MEvalVarArr *variables_array) {
     if (variables_array->arr_ptr != NULL) {
-        free(variables_array->arr_ptr);
+        MEVAL_FREE(variables_array->arr_ptr);
         variables_array->arr_ptr = NULL;
     }
     variables_array->elements_count = 0;
