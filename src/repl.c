@@ -157,8 +157,8 @@ int main(int argc, char* argv[]) {
     //if (error.type == MEVAL_NO_ERROR) {
     //    printf("expression '%s' evaluated to %f\n", expr, value);
     //}
-    
-    
+
+#ifdef MEVAL_DB_ENABLED
     MEvalVarArr test_vars = {0};
     MEvalVar test_var = {.name="f", .name_char_count=1, .value=3};
     meval_append_variable(&test_vars, test_var);
@@ -170,8 +170,6 @@ int main(int argc, char* argv[]) {
     } else {
         printf("test_output failed: %s\n", error.message);
     }
-    
-    bool include_vars = false;
 
     const char* test_compile_expression = "5+12+f";
     MEvalCompiledExpr* compiled_expression = meval_var_compile(test_compile_expression, &error);
@@ -187,7 +185,9 @@ int main(int argc, char* argv[]) {
         printf("expression '%s' had errores: %d:%s\n", test_compile_expression, error.type, error.message);
     }
     meval_free_compiled_expr(&compiled_expression);
-
+#endif
+    
+    bool include_vars = false;
     double value = 0;
     while (true) {
         /*
