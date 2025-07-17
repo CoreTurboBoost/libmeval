@@ -121,7 +121,7 @@ void print_usage(const char* program_name) {
 
 int main(int argc, char* argv[]) {
 
-    struct MEvalError error;
+    MEvalError error;
 
     uint32_t failure_count = 0;
     if (argc > 1) {

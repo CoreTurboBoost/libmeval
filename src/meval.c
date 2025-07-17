@@ -712,7 +712,7 @@ void free_variable_arr(MEvalVarArr *variables_array) {
     variables_array->capacity_elements = 0;
 }
 
-static void meval_internal_compile_expr(const char* input_string, bool support_variables, MEvalVarArr expected_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, struct MEvalError* output_error) {
+static void meval_internal_compile_expr(const char* input_string, bool support_variables, MEvalVarArr expected_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, MEvalError* output_error) {
     /*
      * Note: 'expected_variables' maybe empty. If its empty, every
      *    unrecognised/ambigious function is assumed to be a variable.
@@ -785,7 +785,7 @@ static void meval_internal_compile_expr(const char* input_string, bool support_v
     }
 }
 
-static double meval_internal_eval_tokens(LexToken* input_rpn_tokens, uint32_t input_rpn_tokens_count, bool support_variables, const MEvalVarArr variables, struct MEvalError* output_error) {
+static double meval_internal_eval_tokens(LexToken* input_rpn_tokens, uint32_t input_rpn_tokens_count, bool support_variables, const MEvalVarArr variables, MEvalError* output_error) {
 
     const char* error_string = NULL;
 
@@ -804,7 +804,7 @@ static double meval_internal_eval_tokens(LexToken* input_rpn_tokens, uint32_t in
     return output;
 }
 
-static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, struct MEvalError* output_error) {
+static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, MEvalError* output_error) {
 
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
@@ -836,16 +836,16 @@ static double meval_internal_run(const char* input_string, bool support_variable
     return output;
 }
 
-double meval(const char* input_string, struct MEvalError* error) {
+double meval(const char* input_string, MEvalError* error) {
     MEvalVarArr empty_variables = {0};
     return meval_internal_run(input_string, false, empty_variables, error);
 }
 
-double meval_var(const char* input_string, MEvalVarArr variables, struct MEvalError* error) {
+double meval_var(const char* input_string, MEvalVarArr variables, MEvalError* error) {
     return meval_internal_run(input_string, true, variables, error);
 }
 
-MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError* output_error) {
+MEvalCompiledExpr* meval_var_compile(const char* input_string, MEvalError* output_error) {
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
     output_error->char_index = 0;
@@ -864,7 +864,7 @@ MEvalCompiledExpr* meval_var_compile(const char* input_string, struct MEvalError
     return compiled_expr;
 }
 
-double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr variables, struct MEvalError* output_error) {
+double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr variables, MEvalError* output_error) {
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
     output_error->char_index = 0;
