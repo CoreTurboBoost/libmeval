@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (error.type == MEVAL_NO_ERROR) {
-            printf("input expression '%s' evaluated to %f\n", input, value);
+            printf("input expression '%s' evaluated to %.16f\n", input, value);
         } else {
             printf("input expression '%s' had an error, %s\n", input, error.message);
         }
