@@ -36,5 +36,3 @@ double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr 
 bool meval_append_variable(MEvalVarArr *variables_array, MEvalVar new_variable);
 void meval_free_variable_arr(MEvalVarArr *variables_array);
 void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr);
-
-struct MEvalTokens; // A array of processed tokens (in their RPN form, allows for quick evaluation)
