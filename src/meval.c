@@ -229,7 +229,7 @@ bool match_and_add_char(const char input, const char expected_char, enum LEX_TYP
     return false;
 }
 
-void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, MEvalVarArr expected_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, const MEvalVarArr expected_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
     /*
      * Input: input_string, input_string_char_count.
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
@@ -712,7 +712,7 @@ void free_variable_arr(MEvalVarArr *variables_array) {
     variables_array->capacity_elements = 0;
 }
 
-static void meval_internal_compile_expr(const char* input_string, bool support_variables, MEvalVarArr expected_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, MEvalError* output_error) {
+static void meval_internal_compile_expr(const char* input_string, bool support_variables, const MEvalVarArr expected_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, MEvalError* output_error) {
     /*
      * Note: 'expected_variables' maybe empty. If its empty, every
      *    unrecognised/ambigious function is assumed to be a variable.
@@ -804,7 +804,7 @@ static double meval_internal_eval_tokens(LexToken* input_rpn_tokens, uint32_t in
     return output;
 }
 
-static double meval_internal_run(const char* input_string, bool support_variables, MEvalVarArr variables, MEvalError* output_error) {
+static double meval_internal_run(const char* input_string, bool support_variables, const MEvalVarArr variables, MEvalError* output_error) {
 
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
@@ -813,13 +813,11 @@ static double meval_internal_run(const char* input_string, bool support_variable
 
     MEvalVarArr empty_variable_array = {0};
 
-    if (!support_variables) {
-        variables = empty_variable_array;
-    }
+    const MEvalVarArr final_variables = support_variables ? variables : empty_variable_array;
 
     LexToken* rpn_tokens = NULL;
     uint32_t rpn_tokens_count = 0;
-    meval_internal_compile_expr(input_string, support_variables, variables, &rpn_tokens, &rpn_tokens_count, output_error);
+    meval_internal_compile_expr(input_string, support_variables, final_variables, &rpn_tokens, &rpn_tokens_count, output_error);
     if (output_error->type != MEVAL_NO_ERROR) {
         if (rpn_tokens_count != 0) {
             MEVAL_FREE(rpn_tokens);
@@ -841,7 +839,7 @@ double meval(const char* input_string, MEvalError* error) {
     return meval_internal_run(input_string, false, empty_variables, error);
 }
 
-double meval_var(const char* input_string, MEvalVarArr variables, MEvalError* error) {
+double meval_var(const char* input_string, const MEvalVarArr variables, MEvalError* error) {
     return meval_internal_run(input_string, true, variables, error);
 }
 
@@ -864,7 +862,7 @@ MEvalCompiledExpr* meval_var_compile(const char* input_string, MEvalError* outpu
     return compiled_expr;
 }
 
-double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, MEvalVarArr variables, MEvalError* output_error) {
+double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, const MEvalVarArr variables, MEvalError* output_error) {
     // Reset the error object to a known state.
     output_error->type = MEVAL_NO_ERROR;
     output_error->char_index = 0;
