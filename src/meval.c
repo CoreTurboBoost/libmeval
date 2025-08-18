@@ -77,11 +77,12 @@ static UnaryFn unary_fns[] = {
 };
 static size_t unary_fn_count = sizeof(unary_fns)/sizeof(UnaryFn); // Seems to be accurate enough. Although if issues occur, just update this manually.
 
-enum BINARY_FUNCTION_NAMES {BFN_ADD=0, BFN_SUB, BFN_MUL, BFN_DIV, BFN_POW, BRN_EQUAL, BRN_GREATER, BRN_LESS, BRN_GREATER_EQUAL, BRN_LESS_EQUAL, BRN_AND, BRN_OR};
+enum BINARY_FUNCTION_NAMES {BFN_ADD=0, BFN_SUB, BFN_MUL, BFN_DIV, BFN_MOD, BFN_POW, BRN_EQUAL, BRN_GREATER, BRN_LESS, BRN_GREATER_EQUAL, BRN_LESS_EQUAL, BRN_AND, BRN_OR};
 double fn_add(double a, double b) {return a+b;}
 double fn_sub(double a, double b) {return a-b;}
 double fn_mul(double a, double b) {return a*b;}
 double fn_div(double a, double b) {return a/b;}
+double fn_mod(double a, double b) {return (size_t)a%(size_t)b;}
 double fn_equal(double a, double b) {return a == b;}
 double fn_and(double a, double b) {return a && b;}
 double fn_greater(double a, double b) {return a > b;}
@@ -94,6 +95,7 @@ static BinaryFn binary_fns[] = {
     {.name="-", .precedence=4, .fnptr=fn_sub},
     {.name="*", .precedence=5, .fnptr=fn_mul},
     {.name="/", .precedence=5, .fnptr=fn_div},
+    {.name="%", .precedence=5, .fnptr=fn_mod},
     {.name="^", .precedence=6, .fnptr=pow},
     {.name="=", .precedence=3, .fnptr=fn_equal},
     {.name=">", .precedence=3, .fnptr=fn_greater},
