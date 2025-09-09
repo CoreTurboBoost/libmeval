@@ -340,7 +340,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
             uint32_t found_count = 0;
             // TODO: See previous token, if non-existent or a function, then the current function can only be a unary function, therefore ignore binary function checks.
             //   This implements binary-unary function overloading. Also removes evalution error EE_NOT_ENOUGH_OPERANDS (As a binary function can no longer be placed in a unary function location)
-            const bool allow_ambiguous_calling = false;
+            const bool allow_ambiguous_matching = false;
             while (needs_chopping && chopped_char_count > 1) {
                 chopped_char_count--;
                 for (uint32_t i=0; i < unary_fn_count; i++) {
@@ -350,7 +350,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.error_type = LE_NONE;
                         needs_chopping = false;
                         //break;
-                        if (strlen(unary_fns[i].name) == chopped_char_count || allow_ambiguous_calling) {
+                        if (strlen(unary_fns[i].name) == chopped_char_count || allow_ambiguous_matching) {
                             found_count = 1;
                             break;
                         }
@@ -364,7 +364,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.error_type = LE_NONE;
                         needs_chopping = false;
                         //break;
-                        if (strlen(binary_fns[i].name) == chopped_char_count || allow_ambiguous_calling) {
+                        if (strlen(binary_fns[i].name) == chopped_char_count || allow_ambiguous_matching) {
                             found_count = 1;
                             break;
                         }
@@ -378,7 +378,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                         token.error_type = LE_NONE;
                         needs_chopping = false;
                         //break;
-                        if (strlen(constants[i].name) == chopped_char_count || allow_ambiguous_calling) {
+                        if (strlen(constants[i].name) == chopped_char_count || allow_ambiguous_matching) {
                             found_count = 1;
                             break;
                         }
