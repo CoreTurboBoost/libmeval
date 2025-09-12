@@ -186,6 +186,10 @@ void print_token_value(LexToken token) {
         DBPRINT("value=(binary_function=%d)", token.value.binary_fn);
     } else if (token.type == LT_CONST) {
         DBPRINT("value=(const_name=%d)", token.value.const_name);
+    } else if (token.type == LT_OPEN_BRACKET) {
+        DBPRINT("value=('(')");
+    } else if (token.type == LT_CLOSE_BRACKET) {
+        DBPRINT("value=(')')");
     } else {
         DBPRINT("value=(UNKNOWN)");
     }
