@@ -526,7 +526,9 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                     DBPRINT("  Found ( i=%d in closing bracket search, ending proccessing\n", current_token->char_index);
                     break;
                 }
-                DBPRINT("  token (i=%d, t=%d) being added to output token stack\n", current_token->char_index, current_token->type);
+                DBPRINT("  token (i=%d, t=%d, ", current_token->char_index, current_token->type);
+                print_token_value(*current_token);
+                DBPRINT(") being added to output token stack\n");
                 bool success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, *current_token);
                 if (!success) {
                     MEVAL_FREE(token_stack);
@@ -550,7 +552,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                     break;
                 }
                 if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
-                    DBPRINT("  found ( on token stack (index=%d), ending function search processing\n", token_stack_count-1);
+                    DBPRINT("  found ( on token stack (index=%d), ending function search processing early\n", token_stack_count-1);
                     token_stack_count--;
                     break;
                 }
