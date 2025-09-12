@@ -516,7 +516,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             while (true) {
                 if (token_stack_count == 0) {
                     // missing an opening bracket (reached end of array, without a open bracket)
-                    DBPRINT("Mising open bracket, count: %d\n", open_bracket_count);
+                    DBPRINT("  Mising open bracket, count: %d ... returning with errored state\n", open_bracket_count);
                     MEVAL_FREE(token_stack);
                     *return_state = RPNE_MISSING_OPEN_BRACKET;
                     return;
