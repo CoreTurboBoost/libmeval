@@ -554,10 +554,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 if (token_stack_count == 0) {
                     break;
                 }
-                if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
-                    DBPRINT("  found ( on token stack (index=%d), ending function search processing early\n", token_stack_count-1);
-                    break;
-                }
                 DBPRINT("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 if (stack_top_precedence < current_precedence) {
