@@ -524,6 +524,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 current_token = &token_stack[token_stack_count-1];
                 if (current_token->type == LT_OPEN_BRACKET) { // Only used as a marker on where to stop
                     DBPRINT("  Found ( i=%d in closing bracket search, ending proccessing\n", current_token->char_index);
+                    token_stack_count--; // Remove the open bracket, as its no longer needed.
                     break;
                 }
                 DBPRINT("  token (i=%d, t=%d, ", current_token->char_index, current_token->type);
@@ -553,7 +554,6 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 }
                 if (token_stack[token_stack_count-1].type == LT_OPEN_BRACKET) {
                     DBPRINT("  found ( on token stack (index=%d), ending function search processing early\n", token_stack_count-1);
-                    token_stack_count--;
                     break;
                 }
                 DBPRINT("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
