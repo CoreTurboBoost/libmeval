@@ -503,7 +503,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 return;
             }
         } else if (current_token->type == LT_CLOSE_BRACKET) {
-            DBPRINT("Found ) in input, now handling it ...\n");
+            DBPRINT("Found ) in input (at index %d), now handling it ...\n", current_token->char_index);
             DBPRINT("  Current open_bracket_count: %d\n", open_bracket_count);
             open_bracket_count--;
             /*
