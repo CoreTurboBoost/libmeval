@@ -560,6 +560,9 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
                 }
                 DBPRINT("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
+                if (stack_top_precedence < current_precedence) {
+                    break;
+                }
                 success = add_token(output_rpn_tokens, output_rpn_tokens_count, &rpn_tokens_capcity, token_stack[token_stack_count-1]);
                 if (!success) {
                     MEVAL_FREE(token_stack);
