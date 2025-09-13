@@ -550,10 +550,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
             uint32_t current_precedence = get_fn_precedence(current_token);
             bool success = true;
-            while (stack_top_precedence >= current_precedence) {
-                if (token_stack_count == 0) {
-                    break;
-                }
+            while (token_stack_count > 0) {
                 DBPRINT("  moving token (i=%d, t=%d) from token stack to rpn output\n", token_stack[token_stack_count-1].char_index, token_stack[token_stack_count-1].type);
                 stack_top_precedence = get_fn_precedence(&token_stack[token_stack_count-1]);
                 if (stack_top_precedence < current_precedence) {
