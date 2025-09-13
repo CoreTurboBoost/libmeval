@@ -392,8 +392,10 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
                 if (chopped_char_count == char_count) {
                     for (uint32_t i=0; i < expected_variables.elements_count; i++) {
                         if (strncmp(expected_variables.arr_ptr[i].name, start_char, chopped_char_count) == 0) {
-                            token.type = LT_CONST;
-                            token.value.const_name = (enum CONSTANT_NAMES)i;
+                            DBPRINT("Actually matched with a variable in the embedded loop\n");
+                            token.type = LT_VAR;
+                            snprintf(token.value.var_name, MIN(MEVAL_VAR_NAME_MAX_LEN, chopped_char_count+1), "%s", start_char);
+                            DBPRINT("  Variable matched %s\n", token.value.var_name);
                             token.error_type = LE_NONE;
                             needs_chopping = false;
                             found_count = 0;
