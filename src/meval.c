@@ -550,7 +550,7 @@ void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_
             }
             uint32_t current_precedence = get_fn_precedence(current_token);
             bool success = true;
-            while (stack_top_precedence >= current_precedence) { // Convert to a (eval from right first) like an array language, by changing the condition from '>=' to '>'.
+            while (stack_top_precedence >= current_precedence) {
                 if (token_stack_count == 0) {
                     break;
                 }
