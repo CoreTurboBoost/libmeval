@@ -24,4 +24,4 @@ clean:
 ./bin:
 	mkdir bin
 
-.PHONY: clean package repl repl-rel repl-static 
+.PHONY: clean package repl repl-rel repl-rel-static 
