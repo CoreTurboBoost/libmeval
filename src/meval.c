@@ -132,7 +132,7 @@ typedef struct {
 typedef struct {
     LexToken* tokens_ptr;
     uint32_t tokens_count;
-    uint32_t array_capacity;
+    uint32_t tokens_capacity;
 } LexTokenArray;
 
 typedef struct MEvalCompiledExpr {
