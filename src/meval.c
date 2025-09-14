@@ -173,7 +173,7 @@ const char* get_eval_error_str(enum EVAL_ERROR error) {
 }
 
 // debug printing
-void print_token_value(LexToken token) {
+static void print_token_value(LexToken token) {
     if (token.type == LT_ERROR) {
         DBPRINT("value=(error_str=%s)", token.value.error_str);
     } else if (token.type == LT_VAR) {
@@ -194,13 +194,13 @@ void print_token_value(LexToken token) {
         DBPRINT("value=(UNKNOWN)");
     }
 }
-void print_token(LexToken token) {
+static void print_token(LexToken token) {
     DBPRINT("LexToken(type=%d, char_index=%u, error_type=%d, value=...). ", token.type, token.char_index, token.error_type);
     print_token_value(token);
     DBPRINT("\n");
 }
 
-bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, uint32_t* token_array_allocated_element_count, LexToken new_token) {
+static bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, uint32_t* token_array_allocated_element_count, LexToken new_token) {
     /* Append the token 'new_token' to the end of the dynamic array '*token_array_ptr' */
     if (*token_array_element_count +1 >= *token_array_allocated_element_count) {
         uint32_t new_allocated_count = *token_array_allocated_element_count*1.5;
@@ -242,7 +242,7 @@ static bool free_tokens_arr(LexTokenArray* array) {
     return true;
 }
 
-bool match_and_add_char(const char input, const char expected_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
+static bool match_and_add_char(const char input, const char expected_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
     /*
      * Returns true on successful match, else false.
      *  'token_allocation_error' should be initalized to false, before execution.
@@ -261,7 +261,7 @@ bool match_and_add_char(const char input, const char expected_char, enum LEX_TYP
     return false;
 }
 
-void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, const MEvalVarArr expected_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
+static void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, bool allow_variables, const MEvalVarArr expected_variables, LexToken** output_lex_tokens, uint32_t* output_lex_tokens_count, bool* error_occured) {
     /*
      * Input: input_string, input_string_char_count.
      * Output: output_lex_tokens, output_lex_tokens_count, error_occured.
@@ -483,7 +483,7 @@ void gen_lex_tokens(const char* input_string, uint32_t input_string_char_count, 
     }
 }
 
-uint8_t get_fn_precedence(const LexToken* token_ptr) {
+static uint8_t get_fn_precedence(const LexToken* token_ptr) {
     if (token_ptr->type == LT_UNARY_FUNCTION) {
         return unary_fns[token_ptr->value.unary_fn].precedence;
     } else if (token_ptr->type == LT_BINARY_FUNCTION) {
@@ -492,7 +492,7 @@ uint8_t get_fn_precedence(const LexToken* token_ptr) {
     return 0;
 }
 
-void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, bool allow_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) {
+static void gen_reverse_polish_notation(const LexToken* input_lex_tokens, const uint32_t lex_token_count, bool allow_variables, LexToken** output_rpn_tokens, uint32_t *output_rpn_tokens_count, enum RPN_ERROR *return_state) {
     /* Caller is required to free output_rpn_tokens_count. Even on error */
 
     // If want support for both binary and unary functions to overlap (such as -), check if the function has two inputs (a LT_NUMBER or LT_CONST (or maybe a bracket) on either side, if there is only one, the treat as a unary function, else as a binary function).
