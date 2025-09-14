@@ -216,6 +216,32 @@ bool add_token(LexToken** token_array_ptr, uint32_t* token_array_element_count, 
     return true;
 }
 
+static bool add_token_to_arr(LexTokenArray* array, LexToken new_token) {
+    /* Append the token 'new_token' to the end of the dynamic array '*token_array_ptr' */
+    if (array->tokens_count +1 >= array->tokens_capacity) {
+        uint32_t new_allocated_count = array->tokens_capacity*1.5;
+        LexToken* tmp = MEVAL_REALLOCARRAY(array->tokens_ptr, new_allocated_count, sizeof(LexToken));
+        if (tmp == NULL) {
+            return false;
+        }
+        array->tokens_capacity = new_allocated_count;
+        array->tokens_ptr = tmp;
+    }
+    array->tokens_ptr[array->tokens_count] = new_token;
+    array->tokens_count++;
+    return true;
+}
+
+static bool free_tokens_arr(LexTokenArray* array) {
+    array->tokens_count = 0;
+    if (array->tokens_capacity == 0) {
+        return false;
+    }
+    array->tokens_capacity = 0;
+    array->tokens_ptr = NULL;
+    return true;
+}
+
 bool match_and_add_char(const char input, const char expected_char, enum LEX_TYPE token_type, uint32_t char_index, LexToken** token_array, uint32_t* tokens_count, uint32_t* tokens_capacity, bool* token_allocation_error) {
     /*
      * Returns true on successful match, else false.
