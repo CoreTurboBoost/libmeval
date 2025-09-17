@@ -238,6 +238,7 @@ static bool free_tokens_arr(LexTokenArray* array) {
         return false;
     }
     array->tokens_capacity = 0;
+    MEVAL_FREE(array->tokens_ptr);
     array->tokens_ptr = NULL;
     return true;
 }
