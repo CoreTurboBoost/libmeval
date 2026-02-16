@@ -20,7 +20,7 @@ objs/meval.o: src/meval.c ./objs
 	$(CC) -Wall -Wpedantic -O3 -c -s -I./include src/meval.c -o objs/meval.o
 
 repl: src/repl.c ./bin
-	$(CC) ./src/repl.c -g -o bin/meval-repl-db -Wall -Wpedantic -fsanitize=address -DMEVAL_DB_ENABLED src/meval.c -Wall -Wpedantic -I./include -lm
+	$(CC) ./src/repl.c -g -o bin/meval-repl-db -Wall -Wpedantic -fsanitize=address -DMEVAL_DB_ENABLED -DMEVAL_OPT_ALLOW_MISSING_OPEN_BRACKET=0 src/meval.c -Wall -Wpedantic -I./include -lm
 repl-rel: src/repl.c ./bin
 	$(CC) ./src/repl.c -s -O3 -o bin/meval-repl -Wall -Wpedantic -fsanitize=address src/meval.c -Wall -Wpedantic -I./include -lm
 repl-rel-static: src/repl.c ./bin
