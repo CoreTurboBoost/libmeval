@@ -11,6 +11,7 @@ shared-install:
 	mkdir -p /usr/local/lib/meval/
 	cp ./lib/libmeval.so /usr/local/lib/meval/
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath=/usr/local/lib/meval -I./include -L./lib -lmeval -lm
+	cp ./include/meval/meval.h /usr/local/include/meval/
 
 shared-local:
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
