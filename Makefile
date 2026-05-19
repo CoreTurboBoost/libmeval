@@ -2,12 +2,14 @@
 package: objs/meval.o ./objs ./lib
 	ar -rcs ./lib/libmeval.a ./objs/meval.o
 
-install: /usr/local/lib/meval/libmeval.so
+install: /usr/local/lib/meval/libmeval.so /usr/local/include/meval/meval.h
 
 /usr/local/lib/meval/libmeval.so: lib/libmeval.so
 	mkdir -p /usr/local/lib/meval/
-	mkdir -p /usr/local/include/meval/
 	cp ./lib/libmeval.so /usr/local/lib/meval/
+
+/usr/local/include/meval/meval.h: ./include/meval/meval.h
+	mkdir -p /usr/local/include/meval/
 	cp ./include/meval/meval.h /usr/local/include/meval/
 
 lib/libmeval.so: src/meval.c include/meval/meval.h
