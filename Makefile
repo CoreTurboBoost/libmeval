@@ -2,6 +2,17 @@
 package: objs/meval.o ./objs ./lib
 	ar -rcs ./lib/libmeval.a ./objs/meval.o
 
+install: /usr/local/lib/meval/libmeval.so
+
+/usr/local/lib/meval/libmeval.so: lib/libmeval.so
+	mkdir -p /usr/local/lib/meval/
+	mkdir -p /usr/local/include/meval/
+	cp ./lib/libmeval.so /usr/local/lib/meval/
+	cp ./include/meval/meval.h /usr/local/include/meval/
+
+lib/libmeval.so: src/meval.c include/meval/meval.h
+	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
+
 shared:
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath="$(LIB_DIR)" -I./include -L./lib -lmeval -lm
