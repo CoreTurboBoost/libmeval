@@ -7,10 +7,12 @@ install: /usr/local/lib/meval/libmeval.so /usr/local/include/meval/meval.h
 /usr/local/lib/meval/libmeval.so: lib/libmeval.so
 	mkdir -p /usr/local/lib/meval/
 	cp ./lib/libmeval.so /usr/local/lib/meval/
+	chmod 644 /usr/local/lib/meval/libmeval.so
 
 /usr/local/include/meval/meval.h: ./include/meval/meval.h
 	mkdir -p /usr/local/include/meval/
 	cp ./include/meval/meval.h /usr/local/include/meval/
+	chmod 644 /usr/local/include/meval/meval.h
 
 lib/libmeval.so: src/meval.c include/meval/meval.h
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
