@@ -158,6 +158,8 @@ int main(void) {
         printf("Failed to evalute: %s\n", e.message);
         return 4;
     }
+    meval_free_variable_arr(&vars);
+    meval_free_compiled_expr(&compile_expr);
     printf("val: %f\n", val);
 }
 ```
