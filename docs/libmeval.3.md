@@ -102,6 +102,7 @@ typedef struct MEvalCompiledExpr MEvalCompiledExpr;
     - Compiles the expression into a more efficient format for repeated evaluation.
     - Any unmatched identifiers in `input_string` are assumed to be variables.
     - Returns a pointer to an opaque struct that represents the compiled version of the expression.
+    - The returned `MEvalCompiledExpr*` must be freed, even if the function fails.
     - `output_error` is an output variable that always gets set by the function, even on success.
     - *NOTE* Internal function names takes precedence over variable names. Any colliding variable name would be ignored.
 - `double meval_var_eval_cexpr(const MEvalCompiledExpr* compiled_expr, const MEvalVarArr variables, MEvalError* output_error);`
