@@ -27,7 +27,7 @@ Library placed in the `lib/` directory.
 
 #### Building on Windows  (requires gcc, or clang, and GNUmake through MinGW)
 
-You would have to define `MEVAL_REALLOCARRAY( ... )` as `realloc( ... )` due to Windows not having a `reallocarray( ... )` function that the library would attempt to use by default.
+You would have to define `MEVAL_REALLOCARRAY( ... )` as `realloc( ... )` due to Windows not having a `reallocarray( ... )` function that the library would attempt to use by default. See [docs/libmeval.3.md](docs/libmeval.3.md) for defining the macro.
 
 *NOT* any `install` targets will not work.
 *NOT* any `shared` targets may not work.
