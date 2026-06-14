@@ -50,7 +50,8 @@ void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr);
 - `#define MEVAL_FREE(ptr) free(ptr)`
     - Overrides the libraries use of `free( ... )`.
 
-Each macro definable on their own.
+Each macro is definable on it's own.
+
 Must be defined through the compiler, due to the way `meval.c` includes `meval.h`.
 
 # `MEvalError` struct
