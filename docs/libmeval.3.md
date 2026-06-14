@@ -129,7 +129,7 @@ typedef struct MEvalCompiledExpr MEvalCompiledExpr;
     - Free any heap allocated memory associated with a given `compiled_expr`.
     - Calling this function with an already freed `compiled_expr` is safe.
     - Parameter `compiled_expr` cannot be `NULL`.
-    - Parameter `compiled_expr` gets modified by the function if it's not already been freed.
+    - Parameter `compiled_expr` only gets modified by the function if it still has heap memory allocated.
 
 # EXAMPLES
 
