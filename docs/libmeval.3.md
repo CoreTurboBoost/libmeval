@@ -52,7 +52,7 @@ void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr);
 
 Each macro is definable on it's own.
 
-Must be defined through the compiler, due to the way `meval.c` includes `meval.h`.
+Macros must be defined through the compiler, due to the way `meval.c` includes `meval.h`.
 
 # `MEvalError` struct
 
