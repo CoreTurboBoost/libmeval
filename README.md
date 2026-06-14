@@ -9,7 +9,8 @@ An easy-to-use and light-weight mathematical expression evaluator library writte
 
 - make
 - gcc (or clang)
-- sh  (for generating the documentation pages, both man and HTML)
+- bash (or sh)  (for generating the documentation pages, both man and HTML)
+- pandoc   (for generating the documentation pages, both man and HTML)
 
 ### Build instructions
 
