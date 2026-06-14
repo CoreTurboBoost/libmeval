@@ -21,12 +21,10 @@ shared: lib/libmeval.so
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath="$(LIB_DIR)" -I./include -L./lib -lmeval -lm
 
-shared-install:
-	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
-	mkdir -p /usr/local/lib/meval/
-	cp ./lib/libmeval.so /usr/local/lib/meval/
-	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath=/usr/local/lib/meval -I./include -L./lib -lmeval -lm
-	cp ./include/meval/meval.h /usr/local/include/meval/
+shared-install: install
+	$(CC) -Wall -Wpedantic -Os -s ./src/repl.c -o ./bin/meval-shared -lmeval -lm
+	cp ./bin/meval-shared /usr/local/bin/meval
+	chmod 755 /usr/local/bin/meval
 
 shared-local: lib/libmeval.so
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
