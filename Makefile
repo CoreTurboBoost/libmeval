@@ -17,7 +17,7 @@ install: /usr/local/lib/meval/libmeval.so /usr/local/include/meval/meval.h
 lib/libmeval.so: src/meval.c include/meval/meval.h
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
 
-shared:
+shared: lib/libmeval.so
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath="$(LIB_DIR)" -I./include -L./lib -lmeval -lm
 
@@ -28,7 +28,7 @@ shared-install:
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath=/usr/local/lib/meval -I./include -L./lib -lmeval -lm
 	cp ./include/meval/meval.h /usr/local/include/meval/
 
-shared-local:
+shared-local: lib/libmeval.so
 	$(CC) -Wall -Wpedantic -O3 -I./include src/meval.c -o lib/libmeval.so -shared
 	$(CC) -Wall -Wpedantic -O3 ./src/repl.c -o ./bin/meval-shared -Wl,-rpath=./lib -I./include -L./lib -lmeval -lm
 
