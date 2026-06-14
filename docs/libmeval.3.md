@@ -139,7 +139,7 @@ typedef struct MEvalCompiledExpr MEvalCompiledExpr;
 
 int main(void) {
     /* Simple library interface */
-    MEvalError e;
+    MEvalError e = {0};
     double val = meval("1+2", &e);
     if (e.type != MEVAL_NO_ERROR) {
         printf("Failed to evaluate: %s\n", e.message);
