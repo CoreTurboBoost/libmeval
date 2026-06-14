@@ -40,6 +40,12 @@ repl-rel: src/repl.c ./bin
 repl-rel-static: src/repl.c ./bin
 	$(CC) -static ./src/repl.c -s -O3 -o bin/meval-repl-static -Wall -Wpedantic src/meval.c -Wall -Wpedantic -I./include -lm
 
+install-docs: docs/libmeval.3.md docs/genManPage.sh docs/genHTMLPage.sh
+	$(SHELL docs/genManPage.sh)
+	$(SHELL docs/genHTMLPage.sh)
+	mkdir -p /usr/local/share/man/man3/
+	cp docs/libmeval.3 /usr/local/share/man/man3/
+
 clean:
 	rm ./objs/*.o
 	rm ./lib/*.a
