@@ -156,7 +156,6 @@ int main(void) {
     MEvalVarArr vars = {0};
     MEvalVar x = {0};
     x.name[0] = 'x';
-    x.name[1] = '\0';
     x.value = 12;
     if (meval_append_variable(&vars, x) == false) { return 3; }
     val = meval_var_eval_cexpr(compile_expr, vars, &e);
