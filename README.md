@@ -1,7 +1,7 @@
 
 # libmeval
 
-A easy-to-use and light-weight mathematical expression evaluator library written in C.
+An easy-to-use and light-weight mathematical expression evaluator library written in C.
 
 ## Building from source
 
