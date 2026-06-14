@@ -142,7 +142,7 @@ int main(void) {
     MEvalError e = {0};
     double val = meval("1+2", &e);
     if (e.type != MEVAL_NO_ERROR) {
-        printf("Failed to evaluate: %s\n", e.message);
+        printf("Failed to evaluate expression: %s\n", e.message);
         return 1;
     }
     printf("val: %f\n", val);
@@ -150,7 +150,7 @@ int main(void) {
     /* Compiled expression and Variable interface */
     MEvalCompiledExpr* compile_expr = meval_var_compile("2-3*x", &e);
     if (e.type != MEVAL_NO_ERROR) {
-        printf("Failed to evaluate: %s\n", e.message);
+        printf("Failed to compile expression: %s\n", e.message);
         return 2;
     }
     MEvalVarArr vars = {0};
