@@ -3,6 +3,10 @@
 
 libmeval - C library for evaluating a math expression to a number
 
+# LIBRARY
+
+Math evaluator library (libmeval, -lmeval)
+
 # SYNOPSIS
 
 ```C
