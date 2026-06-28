@@ -1,4 +1,6 @@
 
+*This branch, `master`, is a development branch, SEE the `2.x` branch (or similar) for stable branches*
+
 # libmeval
 
 An easy-to-use and light-weight mathematical expression evaluator library written in C.
