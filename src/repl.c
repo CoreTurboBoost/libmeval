@@ -117,6 +117,10 @@ void print_vars(MEvalVarArr vars) {
 
 void print_usage(const char* program_name) {
     printf("Usage: %s [expr]...\n", program_name);
+    printf("Usage: %s [--help | --version]\n", program_name);
+}
+void print_version(void) {
+    printf("(libmeval) MEval Version: %d.%d\n", MEVAL_VERSION_MAJOR, MEVAL_VERSION_MINOR);
 }
 
 int main(int argc, char* argv[]) {
@@ -128,6 +132,9 @@ int main(int argc, char* argv[]) {
         for (int i=1; i < argc; i++) {
             if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
                 print_usage(argv[0]);
+                exit(EXIT_SUCCESS);
+            } else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+                print_version();
                 exit(EXIT_SUCCESS);
             } else {
                 double answer = meval(argv[i], &error);
