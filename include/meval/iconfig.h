@@ -2,6 +2,10 @@
 
 // implementation configuration (iconfig.h)
 
+/* This file may change dramatically at any time, even when part of a stable
+ * release, as it is a direct dependency on the internal implementation of the
+ * library */
+
 /* This is an internal implementation header file *ONLY*. No external program
  * should include this file, only `meval.c` part of the meval library internal
  * implementation */
