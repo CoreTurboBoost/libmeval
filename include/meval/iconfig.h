@@ -13,6 +13,9 @@
 // Note: A function or constant cannot be (or start with) '(' or ')', these
 //       characters are reserved.
 
+// Allow for implicity '(' in expressions, set to 1 to allow
+#define MEVAL_OPT_ALLOW_MISSING_OPEN_BRACKET 0
+
 static double fn_negate(double a) {return -a;}
 static double fn_cosec(double a) {return 1/sin(a);}
 static double fn_sec(double a) {return 1/cos(a);}
