@@ -53,65 +53,12 @@ typedef struct {
 //  struct UnaryFn(name: str, id: enum/int, precedence: int, fnptr)
 //  struct BinaryFn(name: str, id: enum/int, precedence: int, fnptr)
 //  struct Constant(name: str, id: enum/int, value: double)
+#include "meval/iconfig.h"
 
-// Note: functions or constants cannot contain both both punctuation and characters in it.
-// Note: functions or constants cannot contain digits, although this may change latter.
-// Note: functions or constants cannot be (or state with) '(' or ')', these are reserved.
-double fn_negate(double a) {return -a;}
-double fn_cosec(double a) {return 1/sin(a);}
-double fn_sec(double a) {return 1/cos(a);}
-double fn_cot(double a) {return 1/tan(a);}
-enum UNARY_FUNCTION_NAMES {UFN_NEGATE=0, UFN_SIN, UFN_COS, UFN_TAN, UFN_ASIN, UFN_ACOS, UFN_ATAN, UFN_COSEC, UFN_SEC, UFN_COT, UFN_LOG}; // Used as an index in the 'unary_fns' array.
-static UnaryFn unary_fns[] = {
-    {.name="_", .precedence=7, .fnptr=fn_negate},
-    {.name="sin", .precedence=7, .fnptr=sin},
-    {.name="cos", .precedence=7, .fnptr=cos},
-    {.name="tan", .precedence=7, .fnptr=tan},
-    {.name="asin", .precedence=7, .fnptr=asin},
-    {.name="acos", .precedence=7, .fnptr=acos},
-    {.name="atan", .precedence=7, .fnptr=atan},
-    {.name="cosec", .precedence=7, .fnptr=fn_cosec},
-    {.name="sec", .precedence=7, .fnptr=fn_sec},
-    {.name="cot", .precedence=7, .fnptr=fn_cot},
-    {.name="log", .precedence=7, .fnptr=log}
-};
 static size_t unary_fn_count = sizeof(unary_fns)/sizeof(UnaryFn); // Seems to be accurate enough. Although if issues occur, just update this manually.
 
-enum BINARY_FUNCTION_NAMES {BFN_ADD=0, BFN_SUB, BFN_MUL, BFN_DIV, BFN_MOD, BFN_POW, BRN_EQUAL, BRN_GREATER, BRN_LESS, BRN_GREATER_EQUAL, BRN_LESS_EQUAL, BRN_AND, BRN_OR};
-double fn_add(double a, double b) {return a+b;}
-double fn_sub(double a, double b) {return a-b;}
-double fn_mul(double a, double b) {return a*b;}
-double fn_div(double a, double b) {return a/b;}
-double fn_mod(double a, double b) {return (size_t)a%(size_t)b;}
-double fn_equal(double a, double b) {return a == b;}
-double fn_and(double a, double b) {return a && b;}
-double fn_greater(double a, double b) {return a > b;}
-double fn_less(double a, double b) {return a < b;}
-double fn_greater_equal(double a, double b) {return a >= b;}
-double fn_less_equal(double a, double b) {return a <= b;}
-double fn_or(double a, double b) {return a || b;}
-static BinaryFn binary_fns[] = {
-    {.name="+", .precedence=4, .fnptr=fn_add},
-    {.name="-", .precedence=4, .fnptr=fn_sub},
-    {.name="*", .precedence=5, .fnptr=fn_mul},
-    {.name="/", .precedence=5, .fnptr=fn_div},
-    {.name="%", .precedence=5, .fnptr=fn_mod},
-    {.name="^", .precedence=6, .fnptr=pow},
-    {.name="=", .precedence=3, .fnptr=fn_equal},
-    {.name=">", .precedence=3, .fnptr=fn_greater},
-    {.name="<", .precedence=3, .fnptr=fn_less},
-    {.name=">=", .precedence=3, .fnptr=fn_greater_equal},
-    {.name="<=", .precedence=3, .fnptr=fn_less_equal},
-    {.name="&", .precedence=2, .fnptr=fn_and},
-    {.name="|", .precedence=1, .fnptr=fn_or}
-};
 static size_t binary_fn_count = sizeof(binary_fns)/sizeof(BinaryFn); // Seems to be accurate enough. Although if issues occur, just update this manually.
 
-enum CONSTANT_NAMES {CN_PI=0, CN_E};
-static Constant constants[] = {
-    {.name="pi", .value=M_PI},
-    {.name="e", .value=M_E}
-};
 static size_t constants_count = sizeof(constants)/sizeof(Constant); // Seems to be accurate enough. Although if issues occur, just update this manually.
 
 typedef struct {
