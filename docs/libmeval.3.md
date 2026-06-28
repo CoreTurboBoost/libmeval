@@ -49,6 +49,8 @@ void meval_free_compiled_expr(MEvalCompiledExpr** compiled_expr);
     - Overrides the libraries use of `reallocarray( ... )`.
 - `#define MEVAL_FREE(ptr) free(ptr)`
     - Overrides the libraries use of `free( ... )`.
+- #define MEVAL_OPT_ALLOW_MISSING_OPEN_BRACKET 1
+    - Allows for left brackets/parenthesis to be implicitly added, even if the given expression is missing them. 1 enables the feature, 0 disables the feature.
 
 Each macro is definable on it's own.
 
